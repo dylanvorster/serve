@@ -1,23 +1,17 @@
 {
   "name": "storm-serve",
   "version": "1.0.0",
-  "keywords": [
-    "util",
-    "functional",
-    "server",
-    "client",
-    "browser"
-  ],
   "author": "dylanvorster",
   "contributors": [],
   "dependencies": {},
-  "main:": "src/SessionModule.js",
+  "main": "src/SessionModule.js",
   "devDependencies": {
     "browser-pack": "^4.0.2",
     "duplexer": "^0.1.1",
     "filehandler": "0.0.0",
     "finalhandler": "^0.3.5",
     "gaze": "^0.5.1",
+    "insert-module-globals": "^6.4.2",
     "load-script": "^1.0.0",
     "lodash": "^3.8.0",
     "minimatch": "^2.0.7",
@@ -29,6 +23,7 @@
     "through": "^2.3.7",
     "through2": "^0.6.5",
     "trumpet": "^1.7.1",
+    "uglify-js": "^2.4.21",
     "vinyl-transform": "^1.0.0"
   }
 }

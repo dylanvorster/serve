@@ -2,7 +2,7 @@ var url				= require("url");
 var fs				= require("fs");
 var replaceStream	= require('replacestream');
 var minimatch		= require("minimatch");
-var _merge		= require("lodash/object/merge");
+var _merge			= require("lodash/object/merge");
 
 var DepsModule		= require("./DepsModule");
 var inject			= require("./InjectScript");

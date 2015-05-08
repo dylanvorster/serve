@@ -3,11 +3,40 @@ var shasum = require("shasum");
 var insert = require('insert-module-globals');
 var unique = require("lodash/array/uniq");
 var UglifyJS = require("uglify-js");
-process.env.NODE_ENV = "production";
+var sassGraph = require('./sass-graph');
 
+process.env.NODE_ENV = "production";
+/**
+ * @author Dylan Vorster
+ */
 module.exports = {
 	cache: {},
+	
+	/**
+	 * Encapsulation function for scanning sass or javascript
+	 * 
+	 * @param {type} file
+	 * @param {type} cb
+	 * @returns {undefined}
+	 */
 	scan: function(file,cb){
+		//javascript file
+		if(file.indexOf(".js", this.length - ".js".length) !== -1){
+			this.scanJavascript(file,cb);
+		}
+		
+		//sass file
+		else if(file.indexOf(".scss", this.length - ".scss".length) !== -1){
+			this.scanSass(file,cb);
+		}
+	},
+	
+	scanSass: function(file,cb){
+		var files = sassGraph.parseDir(file);
+		cb(files);
+	},
+	
+	scanJavascript: function(file,cb){
 		
 		//first check the cache
 		if(this.cache[file] !== undefined){

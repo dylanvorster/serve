@@ -22,47 +22,123 @@ String.prototype.endsWith = function (suffix) {
  */
 module.exports = {
 	settings:{
+		//cache for the sentFiles
+		sentFiles: {},
+		
+		//extra javascript
+		extraScript: [],
+		
+		//extra javascript files
+		extraScripts: [],
+		
+		//glob for the file serve
 		mappings: {
 			"/LoadModule.js":	__dirname + "/LoadModule.js"
 		}
 	},
+	
+	/**
+	 * Call this method to merge user settings with these settings
+	 * 
+	 * @param {type} options
+	 * @returns {undefined}
+	 */
 	init: function(options){
 		_merge(this.settings,options);
 	},
-	sentFiles: {},
+	
+	/**
+	 * Generates a random hash
+	 * @returns {String}
+	 */
 	generateUID: function () {
 		function s4() {
 			return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
 		}
 		return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
 	},
+	
+	/**
+	 * Generates a unique Session ID
+	 * @returns {SessionModule_L49@call;generateUID}
+	 */
 	generateSession: function () {
 		do {
 			//keep generating a session key until we have a unique one
 			var session = this.generateUID();
-		} while (this.sentFiles[session] !== undefined);
+		} while (this.settings.sentFiles[session] !== undefined);
 
 		return session;
 	},
 	registerFile: function (sessionID, file) {
-		if (this.sentFiles[sessionID] === undefined) {
-			this.sentFiles[sessionID] = {};
+		if (this.settings.sentFiles[sessionID] === undefined) {
+			this.settings.sentFiles[sessionID] = {};
 		}
-		this.sentFiles[sessionID][file] = file;
+		this.settings.sentFiles[sessionID][file] = file;
 	},
 	containsFile: function (sessionID, file) {
-		if (this.sentFiles[sessionID] === undefined) {
+		if (this.settings.sentFiles[sessionID] === undefined) {
 			return false;
 		}
-		if (this.sentFiles[sessionID][file] === undefined) {
+		if (this.settings.sentFiles[sessionID][file] === undefined) {
 			return false;
 		}
 		return true;
 	},
-	handleIndex: function (request, response, options) {
-		if(options === undefined){
-			options = {};
+	
+	/**
+	 * Handy method for serving all sass, javascript and index requests
+	 * @param {type} request
+	 * @param {type} response
+	 * @returns {Boolean}
+	 */
+	serve: function(request,response){
+		
+		//we only care about javascript files
+		var queryObject = url.parse(request.url, true);
+		
+		if(queryObject.pathname.endsWith('.html') && this.handleIndex(request,response)){
+			return true;
 		}
+		else if(queryObject.pathname.endsWith('.sass') && this.handleSass(request,response)){
+			return true;
+		}
+		else if(queryObject.pathname.endsWith('.js') && this.handleJavascript(request,response)){
+			return true;
+		}
+		return false;
+	},
+	
+	/**
+	 * Handles serving of the sass
+	 * 
+	 * @param {type} request
+	 * @param {type} response
+	 * @returns {undefined}
+	 */
+	handleSass: function(request,response){
+		var sass = require('node-sass');
+		sass.render({
+		  file: this.getPath(request.url)
+		}, function(err, result) {
+			if(err){
+				console.error(err);
+			}
+			response.writeHead(200);
+			response.write(result);
+			response.end();
+		});
+		return true;
+	},
+	/**
+	 * Handles the serving of the index file
+	 * 
+	 * @param {type} request
+	 * @param {type} response
+	 * @param {type} options
+	 * @returns {Boolean}
+	 */
+	handleIndex: function (request, response) {
 		if (request.url === "/" || request.url === '/index.html') {
 			request.url = "/index.html";
 			
@@ -85,13 +161,13 @@ module.exports = {
 			//this is the file that you can use to load modules
 			stream = stream.pipe(inject("LoadModule.js?CACHE_ID=" + sessionID,true));
 			
-			if(options.extraScripts){
-				options.extraScripts.forEach(function(script){
+			if(this.settings.extraScripts){
+				this.settings.extraScripts.forEach(function(script){
 					stream = stream.pipe(inject(script+"?CACHE_ID=" + sessionID,true));
 				});
 			}
-			if(options.extraScript){
-				options.extraScript.forEach(function(scriptSRC){
+			if(this.settings.extraScript){
+				this.settings.extraScript.forEach(function(scriptSRC){
 					stream = stream.pipe(inject(scriptSRC,false));
 				});
 			}
@@ -103,28 +179,51 @@ module.exports = {
 	},
 	
 	/**
-	 * Browserifies the content and sends it to the server
+	 * Handles the serving of the javascript
 	 * 
-	 * @param {type} file
-	 * @param {type} sessionID
+	 * @param {type} request
 	 * @param {type} response
-	 * @returns {undefined}
+	 * @returns {Boolean}
 	 */
-	browserify: function(file,sessionID,response){
-		DepsModule.scan(file, function (files) {
-			var pack = require('browser-pack')({raw: true, hasExports: true});
-			files.forEach(function (file) {
-				if (!this.containsFile(sessionID, file.id)) {
-					this.registerFile(sessionID, file.id);
-					pack.write(file);
-				} else {
-				}
+	handleJavascript: function (request, response) {
+
+		//we only care about javascript files
+		var queryObject = url.parse(request.url, true);
+		if (!queryObject.pathname.endsWith('.js')) {
+			return false;
+		}
+		
+		var path = this.getPath(queryObject.pathname);
+		
+		//variables from this request
+		var sessionID = queryObject.query.CACHE_ID;
+
+		//browserify the file without checking for dependencies
+		if (sessionID !== undefined) {
+			DepsModule.scan(path, function (files) {
+				var pack = require('browser-pack')({raw: true, hasExports: true});
+				files.forEach(function (file) {
+					if (!this.containsFile(sessionID, file.id)) {
+						this.registerFile(sessionID, file.id);
+						pack.write(file);
+					} else {
+					}
+				}.bind(this));
+				pack.pipe(response);
+				pack.end();
 			}.bind(this));
-			pack.pipe(response);
-			pack.end();
-		}.bind(this));
+			return true;
+		}
+
+		return false;
 	},
 	
+	/**
+	 * Helper function for getting the file requested, that might be linked to the
+	 * path mappings defined in the init method.
+	 * @param {type} url
+	 * @returns {nm$_SessionModule.module.exports.settings.mappings|String}
+	 */
 	getPath: function(url){
 		//check for a mapping
 		for(var i in this.settings.mappings){
@@ -141,27 +240,5 @@ module.exports = {
 			}
 		}
 		return url;
-	},
-	
-	handleJavascript: function (request, response) {
-
-		//we only care about javascript files
-		var queryObject = url.parse(request.url, true);
-		if (!queryObject.pathname.endsWith('.js')) {
-			return false;
-		}
-		
-		var path = this.getPath(queryObject.pathname);
-		
-		//variables from this request
-		var sessionID = queryObject.query.CACHE_ID;
-
-		//browserify the file without checking for dependencies
-		if (sessionID !== undefined) {
-			this.browserify(path,sessionID,response);
-			return true;
-		}
-
-		return false;
 	}
 };

@@ -6,8 +6,9 @@ var SessionModule	= require("./SessionModule");
 
 SessionModule.init({
 	mappings:{
-		"/index.html":		__dirname + "/../tests/index.html",
-		"/*.js":			__dirname + "/../tests/js"
+		"/index.html":	__dirname + "/../tests/index.html",
+		"/*.js":		__dirname + "/../tests/js",
+		"/*.sass":		__dirname + "/../tests/sass"
 	}
 });
 
@@ -16,13 +17,12 @@ var app = http.createServer(function handler(request, response) {
 	
 	console.log("asked for file: ", request.url);
 	
-	//first try to intercept the index and the javascript
-	if(	!SessionModule.handleIndex(request,response) && 
-		!SessionModule.handleJavascript(request,response)){
+	//first try to intercept our system
+	if(!SessionModule.serve(request,response)){
 
-			//failing which we just serve the file normally
-			var done = finalhandler(request, response);
-			serve(request, response, done);
+		//failing which we just serve the file normally
+		var done = finalhandler(request, response);
+		serve(request, response, done);
 	}
 });
 

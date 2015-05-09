@@ -1,11 +1,18 @@
 var url				= require("url");
 var fs				= require("fs");
-var replaceStream	= require('replacestream');
+var replaceStream	= require("replacestream");
 var minimatch		= require("minimatch");
 var _merge			= require("lodash/object/merge");
+var autoprefixer	= require("autoprefixer-core");
+var postcss			= require("postcss");
+var logger			= require("log4js").getLogger("Serve Module"); 
+var send			= require("send");
+var path			= require("path");
 
+//local imports
 var DepsModule		= require("./DepsModule");
 var inject			= require("./InjectScript");
+
 
 /**
  * Helper function
@@ -34,7 +41,10 @@ module.exports = {
 		//glob for the file serve
 		mappings: {
 			"/LoadModule.js":	__dirname + "/LoadModule.js"
-		}
+		},
+		
+		//must storm serve serve static files if it cant run its dynamic serve?
+		serveStatic: true
 	},
 	
 	/**
@@ -67,6 +77,8 @@ module.exports = {
 			//keep generating a session key until we have a unique one
 			var session = this.generateUID();
 		} while (this.settings.sentFiles[session] !== undefined);
+		
+		logger.debug("generated session: "+session);
 
 		return session;
 	},
@@ -95,15 +107,35 @@ module.exports = {
 	serve: function(request,response){
 		
 		//we only care about javascript files
-		var queryObject = url.parse(request.url, true);
+		var pathname = url.parse(request.url, true).pathname;
 		
-		if(queryObject.pathname.endsWith('.html') && this.handleIndex(request,response)){
-			return true;
+		if(pathname === '/' || pathname.endsWith('.html')){
+			logger.debug("trying to serve index: "+pathname);
+			if(this.handleIndex(request,response)){
+				return true;
+			}
 		}
-		else if(queryObject.pathname.endsWith('.sass') && this.handleSass(request,response)){
-			return true;
+		else if(pathname.endsWith('.scss')){
+			logger.debug("trying to serve scss: "+pathname);
+			if(this.handleSass(request,response)){
+				return true;
+			}
 		}
-		else if(queryObject.pathname.endsWith('.js') && this.handleJavascript(request,response)){
+		else if(pathname.endsWith('.js')){
+			logger.debug("trying to serve javascript: "+pathname);
+			if(this.handleJavascript(request,response)){
+				return true;
+			}
+		}else if(this.settings.serveStatic){
+			var newPath = this.getPath(pathname);
+			logger.debug("trying to serve static: "+pathname +" => "+newPath);
+			send(request, newPath)
+				.on('error', function(err){
+					logger.error("failed to serve static: "+err);
+					response.statusCode = err.status || 500;
+					response.end(err.message);
+				})
+				.pipe(response);
 			return true;
 		}
 		return false;
@@ -123,10 +155,23 @@ module.exports = {
 		}, function(err, result) {
 			if(err){
 				console.error(err);
+				response.writeHead(500);
+				response.end();
+				return false;
 			}
-			response.writeHead(200);
-			response.write(result);
-			response.end();
+			
+			//run it through autoprefixer
+			postcss()
+				.use( autoprefixer({ browsers: ['> 1%', 'IE 9'] }) )
+				.process(result.css)
+				.then(function(res){
+					
+					//stream it to the browser
+					response.writeHead(200);
+					response.write(res.css);
+					response.end();
+				});
+			
 		});
 		return true;
 	},
@@ -230,12 +275,12 @@ module.exports = {
 			if(minimatch(url,i)){
 				try{
 					if(fs.lstatSync(this.settings.mappings[i]).isFile()){
-						return this.settings.mappings[i];
+						return path.resolve(this.settings.mappings[i]);
 					}else{
-						return this.settings.mappings[i] + "/" + url;
+						return path.resolve(this.settings.mappings[i] + "/" + url);
 					}
 				}catch(ex){
-					return this.settings.mappings[i] + "/" + url;
+					return path.resolve(this.settings.mappings[i] + "/" + url);
 				}
 			}
 		}

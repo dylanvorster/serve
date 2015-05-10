@@ -7,6 +7,8 @@ var gaze		= require("gaze");
 var path		= require("path");
 var _			= require("lodash");
 var logger		= require('log4js').getLogger("Module Deps"); 
+var resolve		= require("browser-resolve");
+var fs			= require("fs");
 
 process.env.NODE_ENV = "production";
 /**
@@ -19,26 +21,10 @@ module.exports = {
 	depsCache:		{},
 	uglifyCache:	{},
 	
-	/**
-	 * Encapsulation function for scanning sass or javascript
-	 * 
-	 * @param {type} file
-	 * @param {type} cb
-	 * @returns {undefined}
-	 */
-	scan: function(file,cb){
-		var file = path.normalize(file);
+	scanJavascript: function(file,cb,opts){
 		
-		//javascript file
-		if(file.indexOf(".js", this.length - ".js".length) !== -1){
-			this.scanJavascript(file,cb);
-		}else{
-			logger.error("Cannot scan file: "+file+" because it is not javascript");
-			cb();
-		}
-	},
-	
-	scanJavascript: function(file,cb){
+		opts = opts || {};
+		
 		//first check the cache
 		if(this.depsCache[file] !== undefined){
 			logger.debug("using deps cache for: "+file);
@@ -46,7 +32,6 @@ module.exports = {
 			return;
 		}
 		logger.debug("building deps tree for: "+file);
-		
 		var md = moduleDeps({
 			transformKey: [ 'browserify', 'transform' ],
 			globalTransform:[
@@ -56,7 +41,21 @@ module.exports = {
 					return insert(file);
 				}
 				//<-register other transforms here
-			]
+			],
+			
+			//custom resolve function
+			resolve: function(id,o,callback){
+				
+				//run through our mappings first
+				for(var i in opts.aliases){
+					if(id === i){
+						logger.debug("Using alias: "+i+" => "+opts.aliases[i]);
+						callback(false,opts.aliases[i]);
+						return;
+					}
+				}
+				resolve(id,o,callback);
+			}
 		});
 		var files = [];
 		var hashes = {};
@@ -119,6 +118,13 @@ module.exports = {
 			this.depsCache[file] = files;
 			cb(files);
 		}.bind(this));
-		md.end({ file: file});
+		
+		
+		try{
+			fs.lstatSync(file);
+			md.end({ file: file});
+		}catch(ex){
+			md.end({ file: file, source: file, entry: true});
+		}
 	}
 };

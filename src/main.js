@@ -3,9 +3,12 @@ var SessionModule	= require("./SessionModule");
 
 SessionModule.init({
 	mappings:{
-		"/index.html":	__dirname + "/../tests/index.html",
-		"/*.js":		__dirname + "/../tests/js",
-		"/*.scss":		__dirname + "/../tests/sass"
+		"/pluginExample1.js":	function(url){
+			return "var r = require('react'); console.log('I am plugin Test1');";
+		},
+		"/index.html":			__dirname + "/../tests/index.html",
+		"/*.js":				__dirname + "/../tests/js",
+		"/*.scss":				__dirname + "/../tests/sass"
 	}
 });
 

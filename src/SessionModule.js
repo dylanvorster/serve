@@ -43,8 +43,11 @@ module.exports = {
 			"/LoadModule.js":	__dirname + "/LoadModule.js"
 		},
 		
-		//must storm serve serve static files if it cant run its dynamic serve?
-		serveStatic: true
+		//must storm-serve try serve static files if it cant run its dynamic serve?
+		serveStatic: true,
+		
+		//aliases for module paths
+		aliases: {}
 	},
 	
 	/**
@@ -245,7 +248,7 @@ module.exports = {
 
 		//browserify the file without checking for dependencies
 		if (sessionID !== undefined) {
-			DepsModule.scan(path, function (files) {
+			DepsModule.scanJavascript(path, function (files) {
 				var pack = require('browser-pack')({raw: true, hasExports: true});
 				files.forEach(function (file) {
 					if (!this.containsFile(sessionID, file.id)) {
@@ -256,7 +259,7 @@ module.exports = {
 				}.bind(this));
 				pack.pipe(response);
 				pack.end();
-			}.bind(this));
+			}.bind(this),{aliases: this.settings.aliases });
 			return true;
 		}
 
@@ -273,14 +276,22 @@ module.exports = {
 		//check for a mapping
 		for(var i in this.settings.mappings){
 			if(minimatch(url,i)){
+				var map = this.settings.mappings[i];
+				
+				//we have a handler
+				if(typeof map === 'function'){
+					logger.debug("using handler for: "+i);
+					return map(url);
+				}
+				
 				try{
-					if(fs.lstatSync(this.settings.mappings[i]).isFile()){
-						return path.resolve(this.settings.mappings[i]);
+					if(fs.lstatSync(map).isFile()){
+						return path.resolve(map);
 					}else{
-						return path.resolve(this.settings.mappings[i] + "/" + url);
+						return path.resolve(map + "/" + url);
 					}
 				}catch(ex){
-					return path.resolve(this.settings.mappings[i] + "/" + url);
+					return path.resolve(map + "/" + url);
 				}
 			}
 		}

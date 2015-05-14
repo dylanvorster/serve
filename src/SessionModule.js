@@ -188,42 +188,31 @@ module.exports = {
 	 */
 	getPath : function (url) {
 		
-		
-		//first find absolute paths
+		//first responders are absolute paths or functions
 		for (var i in this.settings.mappings) {
-			if (minimatch(url, i) && this.settings.mappings[i].match(/.*\.[^\.\/]*$/)) {
-				//console.log("hey we found: ",i);
-				return path.resolve(this.settings.mappings[i]);
+			
+			if (minimatch(url, i)) {
+				
+				//first check if its a handler
+				if (typeof this.settings.mappings[i] === 'function') {
+					logger.debug("using handler for: " + url);
+					return this.settings.mappings[i](url);
+				}
+				
+				//next check if it is an absolute path
+				if(this.settings.mappings[i].match(/.*\.[^\.\/]*$/)){
+					logger.debug("using absolute path for: " + url);
+					return path.resolve(this.settings.mappings[i]);
+				}
 			}
 		}
 	
-		
-		//check for a mapping
+		//2nd in line is the path mapping
 		for (var i in this.settings.mappings) {
 			if (minimatch(url, i)) {
-				
-				var map = this.settings.mappings[ i ];
-
-				//we have a handler
-				if (typeof map === 'function') {
-					logger.debug("using handler for: " + i);
-					return map(url);
-				}
-
-				try {
-					//definitely a file
-					if (fs.lstatSync(map).isFile()) {
-						return path.resolve(map);
-					}
-					//appends request to the map
-					else {
-						return path.resolve(map + "/" + url);
-					}
-				} catch (ex) {
-					console.log(ex);
-					throw "Error";
-					//return path.resolve(map + "/" + url);
-				}
+				var resolved =  path.resolve(this.settings.mappings[i] + "/" + url);
+				logger.debug("resolved: "+url+" to: "+resolved);
+				return resolved;
 			}
 		}
 		return url;

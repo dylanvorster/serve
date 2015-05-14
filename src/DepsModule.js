@@ -104,10 +104,7 @@ module.exports = {
 				//if it isnt uglified, then uglify it
 				if(this.uglifyCache[file.id] === undefined){
 					logger.debug("Uglifying: "+file.id);
-					//console.log(file);
 					this.uglifyCache[file.id] = UglifyJS.minify(file.source, {fromString:true}).code;
-					
-					//this.uglifyCache[file.id] = file.source;
 				}
 				file.source = this.uglifyCache[file.id];
 				

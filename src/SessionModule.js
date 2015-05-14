@@ -34,10 +34,14 @@ module.exports = {
 		extraScript  : [],
 
 		//extra javascript files
-		extraScripts : [],
-
+		extraScripts: [],
+		
+			
+		//these are first-class responders [function(){}] that are requested before the mappings are
+		handlers: [],
+		
 		//glob for the file serve
-		mappings     : {
+		mappings: {
 			"/LoadModule.js" : __dirname + "/LoadModule.js"
 		},
 
@@ -183,9 +187,21 @@ module.exports = {
 	 * @returns {nm$_SessionModule.module.exports.settings.mappings|String}
 	 */
 	getPath : function (url) {
+		
+		
+		//first find absolute paths
+		for (var i in this.settings.mappings) {
+			if (minimatch(url, i) && this.settings.mappings[i].match(/.*\.[^\.\/]*$/)) {
+				//console.log("hey we found: ",i);
+				return path.resolve(this.settings.mappings[i]);
+			}
+		}
+	
+		
 		//check for a mapping
 		for (var i in this.settings.mappings) {
 			if (minimatch(url, i)) {
+				
 				var map = this.settings.mappings[ i ];
 
 				//we have a handler
@@ -195,9 +211,12 @@ module.exports = {
 				}
 
 				try {
+					//definitely a file
 					if (fs.lstatSync(map).isFile()) {
 						return path.resolve(map);
-					} else {
+					}
+					//appends request to the map
+					else {
 						return path.resolve(map + "/" + url);
 					}
 				} catch (ex) {
@@ -215,7 +234,11 @@ module.exports = {
  * Handy method for serving all javascript and index requests
  */
 module.exports.main = function(options) {
-	module.exports.settings = _.assign(module.exports.settings, options || {});
+	
+	//merges in options
+	_.merge(module.exports.settings, options || {});
+	
+	//sort the mappings accoring to absolute paths first
 	logger.debug(module.exports.settings)
 	return function (request, response, next) {
 		//we only care about javascript files

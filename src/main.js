@@ -1,20 +1,20 @@
-var http			= require('http');
-var SessionModule	= require("./SessionModule");
+var http          = require('http'),
+		SessionModule = require("./SessionModule"),
+		compression   = require('compression'),
+		express       = require('express'),
+		app           = express();
 
-SessionModule.init({
-	mappings:{
-		"/pluginExample1.js":	function(url){
-			return "var r = require('react'); console.log('I am plugin Test1');";
-		},
-		"/index.html":			__dirname + "/../tests/index.html",
-		"/*.js":				__dirname + "/../tests/js",
-		"/*.scss":				__dirname + "/../tests/sass"
+app.use(compression());
+app.use(SessionModule.main({
+	mappings : {
+		"/index.html" : __dirname + "/../tests/index.html",
+		"/*.js"       : __dirname + "/../tests/js",
+		"/*.scss"     : __dirname + "/../tests/sass"
+	},
+	aliases  : {
+		"react" : __dirname + "/../node_modules/react/dist/react.js"
 	}
-});
-
-var app = http.createServer(function handler(request, response) {
-	SessionModule.serve(request,response);
-});
-
-app.listen(8888);
+}));
+app.use(SessionModule.scss());
+app.listen(3000);
 console.info("http started on port: 8888");

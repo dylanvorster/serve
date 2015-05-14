@@ -2,7 +2,8 @@
 	margin: 0;
 	padding: 0;
 }
-
+$blue: rgb(0,0,244);
 body{
 	background: rgb(230,230,230);
+	color: $blue;
 }

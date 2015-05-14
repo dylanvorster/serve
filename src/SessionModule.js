@@ -38,6 +38,10 @@ module.exports = {
 		//extra javascript files
 		extraScripts: [],
 		
+			
+		//these are first-class responders [function(){}] that are requested before the mappings are
+		handlers: [],
+		
 		//glob for the file serve
 		mappings: {
 			"/LoadModule.js":	__dirname + "/LoadModule.js"
@@ -47,7 +51,7 @@ module.exports = {
 		serveStatic: true,
 		
 		//aliases for module paths
-		aliases: {}
+		aliases: {},
 	},
 	
 	/**

@@ -37,7 +37,7 @@ module.exports = {
 		extraScripts: [],
 		
 			
-		//these are first-class responders [function(){}] that are requested before the mappings are
+		//these are first-class responders [function(queryObject){}] that are requested before the mappings are
 		handlers: [],
 		
 		//glob for the file serve
@@ -151,17 +151,42 @@ module.exports = {
 		//we only care about javascript files
 		var queryObject = url.parse(request.url, true);
 		if (path.extname(queryObject.pathname) != '.js') {
-			//next()
 			return false;
 		}
-		var pth = this.getPath(queryObject.pathname);
+		
+		var resultingObject = null;
+		
+		//first check the handlers to see if they can intercept
+		for(var i = 0;i < this.settings.handlers.length;i++){
+			var data = this.settings.handlers[i](queryObject);
+			if(data){
+				resultingObject = data;
+				break;
+			}
+		}
+		
+		//check the path mappings if the handlers could not deal with the request
+		if(resultingObject === null){
+			resultingObject = this.getPath(queryObject.pathname);
+		}
+		
+		//now check the file
+		if(typeof resultingObject === 'string'){
+			try{
+				fs.lstatSync(resultingObject);
+			}catch(ex){
+				response.writeHead(404);
+				response.end();
+			}
+		}
+		
 
 		//variables from this request
 		var sessionID = queryObject.query.CACHE_ID;
 
 		//browserify the file without checking for dependencies
 		if (sessionID !== undefined) {
-			DepsModule.scanJavascript(pth, function (files) {
+			DepsModule.scanJavascript(resultingObject, function (files) {
 				var pack = require('browser-pack')({
 					raw        : true,
 					hasExports : true

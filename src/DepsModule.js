@@ -21,17 +21,25 @@ module.exports = {
 	depsCache:		{},
 	uglifyCache:	{},
 	
+	getKeyForRequest: function(req){
+		if(typeof req === 'object'){
+			return req.src;
+		}
+		return req;
+	},
+	
 	scanJavascript: function(file,cb,opts){
 		
 		opts = opts || {};
+		var key = this.getKeyForRequest(file);
 		
 		//first check the cache
-		if(this.depsCache[file] !== undefined){
-			logger.debug("using deps cache for: "+file);
-			cb(this.depsCache[file]);
+		if(this.depsCache[key] !== undefined){
+			logger.debug("using deps cache for: "+key);
+			cb(this.depsCache[key]);
 			return;
 		}
-		logger.debug("building deps tree for: "+file);
+		logger.debug("building deps tree for: "+key);
 		var md = moduleDeps({
 			transformKey: [ 'browserify', 'transform' ],
 			globalTransform:[
@@ -115,16 +123,17 @@ module.exports = {
 				});
 			}.bind(this));
 			
-			this.depsCache[file] = files;
+			this.depsCache[key] = files;
 			cb(files);
 		}.bind(this));
 		
-		
-		try{
-			fs.lstatSync(file);
+		//source was piped in directly
+		if(file.src){
+			md.end({ file: file.src, source: file.src, entry: true});
+		}
+		//file
+		else{
 			md.end({ file: file});
-		}catch(ex){
-			md.end({ file: file, source: file, entry: true});
 		}
 	}
 };

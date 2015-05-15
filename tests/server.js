@@ -19,6 +19,11 @@ app.use(SessionModule.main({
 			if(queryObject.pathname === '/test2.js'){
 				return {src:"console.log('test2 worked');"};
 			}
+		},
+		function test3(queryObject){
+			if(queryObject.pathname === '/test3.js'){
+				return __dirname+"/js2/test3.js";
+			}
 		}
 	],
 	aliases  : {

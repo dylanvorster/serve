@@ -28,28 +28,27 @@ String.prototype.endsWith = function (suffix) {
 module.exports = {
 	settings : {
 		//cache for the sentFiles
-		sentFiles    : {},
+		sentFiles : {},
 
 		//extra javascript
-		extraScript  : [],
+		extraScript : [],
 
 		//extra javascript files
-		extraScripts: [],
-		
-			
+		extraScripts : [],
+
 		//these are first-class responders [function(queryObject){}] that are requested before the mappings are
-		handlers: [],
-		
+		handlers : [],
+
 		//glob for the file serve
-		mappings: {
+		mappings : {
 			"/LoadModule.js" : __dirname + "/LoadModule.js"
 		},
 
 		//must storm-serve try serve static files if it cant run its dynamic serve?
-		serveStatic  : true,
+		serveStatic : true,
 
 		//aliases for module paths
-		aliases      : {}
+		aliases : {}
 	},
 
 	/**
@@ -78,22 +77,20 @@ module.exports = {
 
 		return session;
 	},
-	registerFile    : function (sessionID, file) {
+	registerFile : function (sessionID, file) {
 		if (this.settings.sentFiles[ sessionID ] === undefined) {
 			this.settings.sentFiles[ sessionID ] = {};
 		}
 		this.settings.sentFiles[ sessionID ][ file ] = file;
 	},
-	containsFile    : function (sessionID, file) {
+	containsFile : function (sessionID, file) {
 		if (this.settings.sentFiles[ sessionID ] === undefined) {
 			return false;
 		}
-		if (this.settings.sentFiles[ sessionID ][ file ] === undefined) {
-			return false;
-		}
-		return true;
+		return this.settings.sentFiles[ sessionID ][ file ] !== undefined;
+		
 	},
-	
+
 	/**
 	 * Handles the serving of the index file
 	 *
@@ -110,30 +107,25 @@ module.exports = {
 			});
 
 			//generate a unique session token that does not exist yet
-			var sessionID = this.generateSession();
-
+			var sessionID = this.generateSession(),
+				generateExternalScript = _.template('\n<script src="${ file }?CACHE_ID='+sessionID+'"></script>'),
+				generateInlineScript = _.template('\n<script>${ code }</script>'),
+				injectedScripts = 
+					//this is the variable that will be the session ID
+					generateInlineScript({code : 'window.CACHE_ID = "' + sessionID + '";'}) +
+					//this is the file that you can use to load modules
+					generateExternalScript({file : 'LoadModule.js'});
+			
 			//add the session ID to each script file
-			stream =
-				stream.pipe(replaceStream(/(<script[\w\s]+src=")([^"]+)("[^\>]*><\/script>)/g, '$1$2?CACHE_ID=' + sessionID +
-				'$3'));
-
-			//this is the variable that will be the session ID
-			stream = stream.pipe(inject("window.CACHE_ID = '" + sessionID + "'", false));
-
-			//this is the file that you can use to load modules
-			stream = stream.pipe(inject("LoadModule.js?CACHE_ID=" + sessionID, true));
-
-			if (this.settings.extraScripts) {
-				this.settings.extraScripts.forEach(function (script) {
-					stream = stream.pipe(inject(script + "?CACHE_ID=" + sessionID, true));
-				});
-			}
-			if (this.settings.extraScript) {
-				this.settings.extraScript.forEach(function (scriptSRC) {
-					stream = stream.pipe(inject(scriptSRC, false));
-				});
-			}
-
+			injectedScripts += this.settings.extraScripts.reduce(function (prev, curr) {
+					return prev + generateExternalScript({file: curr});
+				}, "");
+			injectedScripts += this.settings.extraScript.reduce(function (prev, curr) {
+					return prev + generateInlineScript({code: curr});
+				}, "");
+			
+			stream = stream.pipe(replaceStream(/(<script[\w\s]+src=")([^"]+)("[^\>]*><\/script>)/g, '$1$2?CACHE_ID=' + sessionID + '$3'));
+			stream = stream.pipe(replaceStream(/<head>/g, "<head>"+injectedScripts));
 			stream.pipe(response);
 		}
 
@@ -153,33 +145,32 @@ module.exports = {
 		if (path.extname(queryObject.pathname) != '.js') {
 			return false;
 		}
-		
+
 		var resultingObject = null;
-		
+
 		//first check the handlers to see if they can intercept
-		for(var i = 0;i < this.settings.handlers.length;i++){
-			var data = this.settings.handlers[i](queryObject);
-			if(data){
+		for (var i = 0; i < this.settings.handlers.length; i++) {
+			var data = this.settings.handlers[ i ](queryObject);
+			if (data) {
 				resultingObject = data;
 				break;
 			}
 		}
-		
+
 		//check the path mappings if the handlers could not deal with the request
-		if(resultingObject === null){
+		if (resultingObject === null) {
 			resultingObject = this.getPath(queryObject.pathname);
 		}
-		
+
 		//now check the file
-		if(typeof resultingObject === 'string'){
-			try{
+		if (typeof resultingObject === 'string') {
+			try {
 				fs.lstatSync(resultingObject);
-			}catch(ex){
+			} catch (ex) {
 				response.writeHead(404);
 				response.end();
 			}
 		}
-		
 
 		//variables from this request
 		var sessionID = queryObject.query.CACHE_ID;
@@ -188,7 +179,7 @@ module.exports = {
 		if (sessionID !== undefined) {
 			DepsModule.scanJavascript(resultingObject, function (files) {
 				var pack = require('browser-pack')({
-					raw        : true,
+					raw : true,
 					hasExports : true
 				});
 				files.forEach(function (file) {
@@ -197,10 +188,10 @@ module.exports = {
 						pack.write(file);
 					}
 				}.bind(this));
-				
+
 				pack.pipe(response);
 				pack.end();
-			}.bind(this), _.assign(this.settings.deps, { aliases : this.settings.aliases}));
+			}.bind(this), _.assign(this.settings.deps, { aliases : this.settings.aliases }));
 
 		}
 	},
@@ -212,31 +203,31 @@ module.exports = {
 	 * @returns {nm$_SessionModule.module.exports.settings.mappings|String}
 	 */
 	getPath : function (url) {
-		
+
 		//first responders are absolute paths or functions
 		for (var i in this.settings.mappings) {
-			
+
 			if (minimatch(url, i)) {
-				
+
 				//first check if its a handler
-				if (typeof this.settings.mappings[i] === 'function') {
+				if (typeof this.settings.mappings[ i ] === 'function') {
 					logger.debug("using handler for: " + url);
-					return this.settings.mappings[i](url);
+					return this.settings.mappings[ i ](url);
 				}
-				
+
 				//next check if it is an absolute path
-				if(this.settings.mappings[i].match(/.*\.[^\.\/]*$/)){
+				if (this.settings.mappings[ i ].match(/.*\.[^\.\/]*$/)) {
 					logger.debug("using absolute path for: " + url);
-					return path.resolve(this.settings.mappings[i]);
+					return path.resolve(this.settings.mappings[ i ]);
 				}
 			}
 		}
-	
+
 		//2nd in line is the path mapping
 		for (var i in this.settings.mappings) {
 			if (minimatch(url, i)) {
-				var resolved =  path.resolve(this.settings.mappings[i] + "/" + url);
-				logger.debug("resolved: "+url+" to: "+resolved);
+				var resolved = path.resolve(this.settings.mappings[ i ] + "/" + url);
+				logger.debug("resolved: " + url + " to: " + resolved);
 				return resolved;
 			}
 		}
@@ -247,11 +238,11 @@ module.exports = {
 /**
  * Handy method for serving all javascript and index requests
  */
-module.exports.main = function(options) {
-	
+module.exports.main = function (options) {
+
 	//merges in options
 	_.merge(module.exports.settings, options || {});
-	
+
 	//sort the mappings accoring to absolute paths first
 	return function (request, response, next) {
 		//we only care about javascript files
@@ -273,13 +264,13 @@ module.exports.main = function(options) {
 module.exports.scss = function (options) {
 	options = options || {};
 	var autoprefixer = require("autoprefixer-core"),
-			postcss = require("postcss"),
-			sass = require("node-sass"),
-			defaults = {
-				scss         : {},
-				error        : function () {},
-				autoprefixer : { browsers : [ '> 1%', 'IE 9' ] }
-			};
+		postcss = require("postcss"),
+		sass = require("node-sass"),
+		defaults = {
+			scss : {},
+			error : function () {},
+			autoprefixer : { browsers : [ '> 1%', 'IE 9' ] }
+		};
 	options = _.assign(defaults, options);
 	return function (request, response, next) {
 		var pathname = url.parse(request.url, true).pathname;

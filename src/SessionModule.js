@@ -191,16 +191,18 @@ module.exports = {
 					raw        : true,
 					hasExports : true
 				});
+				logger.debug("writing browser pack")
 				files.forEach(function (file) {
+					logger.info("writing:", file)
 					if (!this.containsFile(sessionID, file.id)) {
 						this.registerFile(sessionID, file.id);
 						pack.write(file);
 					}
 				}.bind(this));
-
+				
 				pack.pipe(response);
 				pack.end();
-			}.bind(this), { aliases : this.settings.aliases });
+			}.bind(this), _.assign(this.settings.deps, { aliases : this.settings.aliases}));
 
 		}
 	},
@@ -253,7 +255,6 @@ module.exports.main = function(options) {
 	_.merge(module.exports.settings, options || {});
 	
 	//sort the mappings accoring to absolute paths first
-	logger.debug(module.exports.settings)
 	return function (request, response, next) {
 		//we only care about javascript files
 		var pathname = url.parse(request.url, true).pathname;
@@ -307,4 +308,4 @@ module.exports.scss = function (options) {
 			next();
 		}
 	}
-}
+};

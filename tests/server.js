@@ -1,15 +1,14 @@
-var http          = require('http'),
-	SessionModule = require("../"),
-	compression   = require('compression'),
-	express       = require('express'),
-	app           = express();
+var SessionModule = require("../"),
+	compression = require('compression'),
+	express = require('express'),
+	app = express();
 
 app.use(compression());
 app.use(SessionModule.main({
 	mappings : {
 		"/index.html" : __dirname + "/../tests/index.html",
-		"/*.js"       : __dirname + "/../tests/js",
-		"/*.scss"     : __dirname + "/../tests/sass",
+		"/*.js" : __dirname + "/../tests/js",
+		"/*.scss" : __dirname + "/../tests/sass",
 		"/test1.js"	  : function(url){
 			return {src: "console.log('test1 worked');"};
 		}
@@ -26,8 +25,14 @@ app.use(SessionModule.main({
 			}
 		}
 	],
-	aliases  : {
+	aliases : {
 		"react" : __dirname + "/../node_modules/react/dist/react.js"
+	},
+	deps : {
+		uglify: false,
+		moduleDeps : {
+			//noParse : [ 'react', 'lodash' ]
+		}
 	}
 }));
 app.use(SessionModule.scss());

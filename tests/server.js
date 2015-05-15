@@ -29,7 +29,7 @@ app.use(SessionModule.main({
 		"react" : __dirname + "/../node_modules/react/dist/react.js"
 	},
 	deps : {
-		uglify: false,
+		uglify: {},
 		moduleDeps : {
 			//noParse : [ 'react', 'lodash' ]
 		}

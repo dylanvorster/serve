@@ -191,9 +191,7 @@ module.exports = {
 					raw        : true,
 					hasExports : true
 				});
-				logger.debug("writing browser pack")
 				files.forEach(function (file) {
-					logger.info("writing:", file)
 					if (!this.containsFile(sessionID, file.id)) {
 						this.registerFile(sessionID, file.id);
 						pack.write(file);

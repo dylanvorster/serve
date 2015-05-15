@@ -107,13 +107,16 @@ module.exports = {
 			files = unique(files, 'source');
 			files.forEach(function (file) {
 				//if it isnt uglified, then uglify it
-				if (opts.uglify && this.uglifyCache[ file.id ] === undefined) {
-					logger.debug("Uglifying: " + file.id);
-					//var uglifyOptions = _.assign({ fromString : true }, typeof opts.uglify == 'Object' ? opts.uglify : {})
-					var uglifyOptions = { fromString : true };
-					this.uglifyCache[ file.id ] = UglifyJS.minify(file.source, uglifyOptions).code;
-				}
+				if (opts.uglify) {
+					if (this.uglifyCache[ file.id ] === undefined) {
+						logger.debug("Uglifying: " + file.id);
+						//var uglifyOptions = _.assign({ fromString : true }, typeof opts.uglify == 'Object' ?
+						// opts.uglify : {})
+						var uglifyOptions = { fromString : true };
+						this.uglifyCache[ file.id ] = UglifyJS.minify(file.source, uglifyOptions).code;
+					}
 				file.source = this.uglifyCache[ file.id ];
+				}
 
 				//convert everything to hashes
 				file.id = hashes[ file.id ];

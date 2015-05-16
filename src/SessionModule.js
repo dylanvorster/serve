@@ -27,6 +27,7 @@ String.prototype.endsWith = function (suffix) {
  */
 module.exports = {
 	settings : {
+		
 		//cache for the sentFiles
 		sentFiles : {},
 
@@ -128,7 +129,6 @@ module.exports = {
 			stream = stream.pipe(replaceStream(/<head>/g, "<head>"+injectedScripts));
 			stream.pipe(response);
 		}
-
 	},
 
 	/**
@@ -138,29 +138,10 @@ module.exports = {
 	 * @param {type} response
 	 * @returns {Boolean}
 	 */
-	handleJavascript : function (request, response) {
+	handleJavascript : function (request, response,queryObject) {
 
 		//we only care about javascript files
-		var queryObject = url.parse(request.url, true);
-		if (path.extname(queryObject.pathname) != '.js') {
-			return false;
-		}
-
-		var resultingObject = null;
-
-		//first check the handlers to see if they can intercept
-		for (var i = 0; i < this.settings.handlers.length; i++) {
-			var data = this.settings.handlers[ i ](queryObject);
-			if (data) {
-				resultingObject = data;
-				break;
-			}
-		}
-
-		//check the path mappings if the handlers could not deal with the request
-		if (resultingObject === null) {
-			resultingObject = this.getPath(queryObject.pathname);
-		}
+		var resultingObject = this.resolve(queryObject);
 
 		//now check the file
 		if (typeof resultingObject === 'string') {
@@ -177,6 +158,7 @@ module.exports = {
 
 		//browserify the file without checking for dependencies
 		if (sessionID !== undefined) {
+			
 			DepsModule.scanJavascript(resultingObject, function (files) {
 				var pack = require('browser-pack')({
 					raw : true,
@@ -194,6 +176,30 @@ module.exports = {
 			}.bind(this), _.assign(this.settings.deps, { aliases : this.settings.aliases }));
 
 		}
+	},
+	
+	/**
+	 * Resolves the queryObject through the handlers and the path mappings
+	 * 
+	 * @param {type} queryObject
+	 */
+	resolve: function(queryObject){
+		var resultingObject = null;
+
+		//first check the handlers to see if they can intercept
+		for (var i = 0; i < this.settings.handlers.length; i++) {
+			var data = this.settings.handlers[ i ](queryObject);
+			if (data) {
+				resultingObject = data;
+				break;
+			}
+		}
+
+		//check the path mappings if the handlers could not deal with the request
+		if (resultingObject === null) {
+			resultingObject = this.getPath(queryObject.pathname);
+		}
+		return resultingObject;
 	},
 
 	/**
@@ -245,42 +251,58 @@ module.exports.main = function (options) {
 
 	//sort the mappings accoring to absolute paths first
 	return function (request, response, next) {
+		
+		var parsedURL = url.parse(request.url, true);
 		//we only care about javascript files
-		var pathname = url.parse(request.url, true).pathname;
+		var pathname = parsedURL.pathname;
 
-		if (pathname === '/' || path.extname(pathname) == '.html') {
+		if (pathname === '/' || path.extname(pathname) === '.html') {
 			logger.debug("trying to serve index: " + pathname);
-			module.exports.handleIndex(request, response);
-		} else if (path.extname(pathname) == '.js') {
+			module.exports.handleIndex(request, response, parsedURL);
+		} else if (path.extname(pathname) === '.js') {
 			response.setHeader('Content-Type', 'application/javascript');
 			logger.debug("trying to serve javascript: " + pathname);
-			module.exports.handleJavascript(request, response)
+			module.exports.handleJavascript(request, response, parsedURL);
 		} else {
 			next();
 		}
-	}
+	};
 };
 
 module.exports.scss = function (options) {
 	options = options || {};
-	var autoprefixer = require("autoprefixer-core"),
-		postcss = require("postcss"),
-		sass = require("node-sass"),
+	
+	var autoprefixer	= require("autoprefixer-core"),
+		postcss			= require("postcss"),
+		sass			= require("node-sass"),
 		defaults = {
 			scss : {},
-			error : function () {},
+			error : function (err) {
+				console.error(err);
+			},
 			autoprefixer : { browsers : [ '> 1%', 'IE 9' ] }
 		};
+		
 	options = _.assign(defaults, options);
 	return function (request, response, next) {
-		var pathname = url.parse(request.url, true).pathname;
-		if (path.extname(pathname) === '.scss') {
+		var parsedURL = url.parse(request.url, true);
+		if (path.extname(parsedURL.pathname) === '.scss') {
 			response.setHeader('Content-Type', 'text/css');
-			options.scss.file = module.exports.getPath(request.url);
+			
+			var finalData = module.exports.resolve(parsedURL);
+			//file was requested
+			if(typeof options.scss.file !== 'string'){
+				options.scss.file = finalData;
+			}
+			//source code was given
+			else{
+				options.scss.data = finalData.src;
+			}
 			sass.render(options.scss, function (err, result) {
 				if (err) {
 					options.error(err, response);
-					next();
+					response.writeHead(500);
+					response.end();
 					return false;
 				}
 
@@ -296,5 +318,5 @@ module.exports.scss = function (options) {
 		} else {
 			next();
 		}
-	}
+	};
 };

@@ -29,7 +29,11 @@ module.exports = {
 	},
 	scanJavascript : function (file, cb, opts) {
 		opts = opts || {};
-			var key = this.getKeyForRequest(file);
+		
+		//we have a function for this becuase 'file' could also be an object
+		//in which case we need a different key
+		var key = this.getKeyForRequest(file);
+		
 		var moduleDepsDefaults = {
 			transformKey : [ 'browserify', 'transform' ],
 			globalTransform : [
@@ -52,13 +56,14 @@ module.exports = {
 				resolve(id, o, callback);
 			}
 		};
-		//logger.debug(opts);
+		
+		//merge in the options
 		_.merge(moduleDepsDefaults, opts.moduleDeps);
-		//logger.debug(moduleDepsDefaults);
+		
 		//first check the cache
-		if (this.depsCache[ file ] !== undefined) {
-			logger.debug("using deps cache for: " + file);
-			cb(this.depsCache[ file ]);
+		if (this.depsCache[ key ] !== undefined) {
+			logger.debug("using deps cache for: " + key);
+			cb(this.depsCache[ key ]);
 			return;
 		}
 		logger.debug("building deps tree for: " + file);

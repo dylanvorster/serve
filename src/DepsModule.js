@@ -111,8 +111,15 @@ module.exports = {
 			//remove duplicates
 			files = unique(files, 'source');
 			files.forEach(function (file) {
-				//if it isnt uglified, then uglify it
+				
+				//json needs this
+				if(path.extname(file.filename) === '.json'){
+					file.source = 'module.exports = '+file.source;
+				}
+				
 				if (opts.uglify) {
+					
+					//if it isnt uglified, then uglify it
 					if (this.uglifyCache[ file.id ] === undefined) {
 						logger.debug("Uglifying: " + file.id);
 						//var uglifyOptions = _.assign({ fromString : true }, typeof opts.uglify == 'Object' ?
@@ -120,7 +127,7 @@ module.exports = {
 						var uglifyOptions = { fromString : true };
 						this.uglifyCache[ file.id ] = UglifyJS.minify(file.source, uglifyOptions).code;
 					}
-				file.source = this.uglifyCache[ file.id ];
+					file.source = this.uglifyCache[ file.id ];
 				}
 
 				//convert everything to hashes

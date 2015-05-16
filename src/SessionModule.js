@@ -4,13 +4,10 @@ var replaceStream = require("replacestream");
 var minimatch = require("minimatch");
 var _ = require("lodash");
 var logger = require("log4js").getLogger("Serve Module");
-var send = require("send");
 var path = require("path");
-//var router = (require('express'))().Router();
 
 //local imports
 var DepsModule = require("./DepsModule");
-var inject = require("./InjectScript");
 
 /**
  * Helper function
@@ -117,13 +114,15 @@ module.exports = {
 					//this is the file that you can use to load modules
 					generateExternalScript({file : 'LoadModule.js'});
 			
-			//add the session ID to each script file
+			//extra script files to be injected
 			injectedScripts += this.settings.extraScripts.reduce(function (prev, curr) {
-					return prev + generateExternalScript({file: curr});
-				}, "");
-			injectedScripts += this.settings.extraScript.reduce(function (prev, curr) {
-					return prev + generateInlineScript({code: curr});
-				}, "");
+				return prev + generateExternalScript({file: curr});
+			}, "");
+				
+			//extra script source code to be injected
+		injectedScripts += this.settings.extraScript.reduce(function (prev, curr) {
+				return prev + generateInlineScript({code: curr});
+			}, "");
 			
 			stream = stream.pipe(replaceStream(/(<script[\w\s]+src=")([^"]+)("[^\>]*><\/script>)/g, '$1$2?CACHE_ID=' + sessionID + '$3'));
 			stream = stream.pipe(replaceStream(/<head>/g, "<head>"+injectedScripts));

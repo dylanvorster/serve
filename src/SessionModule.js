@@ -299,23 +299,11 @@ module.exports.scss = function (options) {
 			else{
 				options.scss.data = finalData.src;
 			}
-			sass.render(options.scss, function (err, result) {
-				if (err) {
-					options.error(err, response);
-					response.writeHead(500);
-					response.end();
-					return false;
-				}
-
-				postcss()
-					.use(autoprefixer(options.autoprefixer))
-					.process(result.css)
-					.then(function (res) {
-						response.writeHead(200);
-						response.write(res.css);
-						response.end();
-					});
-			});
+			var css = sass.renderSync(options.scss).css;
+			css = autoprefixer.process(css, options.autoprefixer).css
+			response.writeHead(200);
+			response.write(css);
+			response.end();
 		} else {
 			next();
 		}

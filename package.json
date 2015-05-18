@@ -28,6 +28,7 @@
     "send": "^0.12.2",
     "serve-static": "^1.9.2",
     "shasum": "^1.0.1",
+    "stringify": "^3.1.0",
     "through": "^2.3.7",
     "through2": "^0.6.5",
     "trumpet": "^1.7.1",

@@ -288,9 +288,11 @@ module.exports.scss = function (options) {
 		if (path.extname(parsedURL.pathname) === '.scss') {
 			response.setHeader('Content-Type', 'text/css');
 			
+			
 			var finalData = module.exports.resolve(parsedURL);
+			
 			//file was requested
-			if(typeof options.scss.file !== 'string'){
+			if(typeof finalData === 'string'){
 				options.scss.file = finalData;
 			}
 			//source code was given

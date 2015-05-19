@@ -300,6 +300,9 @@ module.exports.scss = function (options) {
 				options.scss.data = finalData.src;
 			}
 			sass.render(options.scss, function (err, result) {
+				options.scss.file = null;
+				options.scss.data = null;
+				
 				if (err) {
 					options.error(err, response);
 					response.writeHead(500);

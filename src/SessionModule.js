@@ -94,39 +94,42 @@ module.exports = {
 	 *
 	 * @returns {Boolean}
 	 */
-	handleIndex : function (request, response) {
+	handleIndex : function (request, response, next) {
 		if (request.url === "/" || request.url === '/index.html') {
 			request.url = "/index.html";
-			var stream = fs.createReadStream(this.getPath(request.url));
-			stream.on('error', function (error) {
-				console.error("Caught", error);
-				response.writeHead(500);
-				response.end();
-			});
+			var content = fs.readFileSync(this.getPath(request.url)).toString();
 
 			//generate a unique session token that does not exist yet
 			var sessionID = this.generateSession(),
 				generateExternalScript = _.template('\n<script src="${ file }?CACHE_ID='+sessionID+'"></script>'),
 				generateInlineScript = _.template('\n<script>${ code }</script>'),
-				injectedScripts = 
+				injectedScripts =
 					//this is the variable that will be the session ID
 					generateInlineScript({code : 'window.CACHE_ID = "' + sessionID + '";'}) +
-					//this is the file that you can use to load modules
+						//this is the file that you can use to load modules
 					generateExternalScript({file : 'LoadModule.js'});
-			
+
 			//extra script files to be injected
 			injectedScripts += this.settings.extraScripts.reduce(function (prev, curr) {
 				return prev + generateExternalScript({file: curr});
 			}, "");
-				
+
 			//extra script source code to be injected
-		injectedScripts += this.settings.extraScript.reduce(function (prev, curr) {
+			injectedScripts += this.settings.extraScript.reduce(function (prev, curr) {
 				return prev + generateInlineScript({code: curr});
 			}, "");
-			
-			stream = stream.pipe(replaceStream(/(<script[\w\s]+src=")([^"]+)("[^\>]*><\/script>)/g, '$1$2?CACHE_ID=' + sessionID + '$3'));
-			stream = stream.pipe(replaceStream(/<head>/g, "<head>"+injectedScripts));
-			stream.pipe(response);
+
+
+			content = content.replace(/(<script[\w\s]+src=")([^"]+)("[^\>]*><\/script>)/g, '$1$2?CACHE_ID=' + sessionID + '$3');
+			content = content.replace(/<head>/g, "<head>"+injectedScripts);
+
+			//extra transforms for index.html's content
+			if(this.settings.indexTransform) {
+				content = this.settings.indexTransform(content);
+			}
+			response.write(content);
+			response.end();
+			next();
 		}
 	},
 
@@ -257,7 +260,7 @@ module.exports.main = function (options) {
 
 		if (pathname === '/' || path.extname(pathname) === '.html') {
 			logger.debug("trying to serve index: " + pathname);
-			module.exports.handleIndex(request, response, parsedURL);
+			module.exports.handleIndex(request, response, next);
 		} else if (path.extname(pathname) === '.js') {
 			response.setHeader('Content-Type', 'application/javascript');
 			logger.debug("trying to serve javascript: " + pathname);

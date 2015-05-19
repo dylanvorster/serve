@@ -35,6 +35,5 @@
   "repository": {
     "type": "git",
     "url": "git@gitlab.eezipay.co.za:storm-node/storm-serve.git"
-  },
-  "license": "ISC"
+  }
 }

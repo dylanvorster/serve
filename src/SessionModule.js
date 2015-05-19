@@ -272,7 +272,6 @@ module.exports.scss = function (options) {
 	options = options || {};
 	
 	var autoprefixer	= require("autoprefixer-core"),
-		postcss			= require("postcss"),
 		sass			= require("node-sass"),
 		defaults = {
 			scss : {},

@@ -5,35 +5,36 @@
   "contributors": [],
   "dependencies": {
     "autoprefixer-core": "^5.1.11",
-    "browser-pack": "^4.0.2",
-    "browser-resolve": "^1.8.2",
-    "compression": "^1.4.4",
-    "duplexer": "^0.1.1",
-    "express": "^4.12.3",
-    "filehandler": "0.0.0",
-    "finalhandler": "^0.3.5",
+    "browser-pack": "^5.0.0",
+    "browser-resolve": "^1.9.0",
     "gaze": "^0.5.1",
     "insert-module-globals": "^6.4.2",
     "load-script": "^1.0.0",
     "lodash": "^3.8.0",
-    "log4js": "^0.6.24",
-    "minimatch": "^2.0.7",
-    "module-deps": "^3.7.7",
-    "node-sass": "^3.0.0",
-    "node-sass-middleware": "^0.6.0",
-    "postcss": "^4.1.9",
-    "react": "^0.13.3",
+    "log4js": "^0.6.25",
+    "minimatch": "^2.0.8",
+    "module-deps": "^3.7.12",
+    "node-sass": "^3.1.1",
     "replacestream": "^2.1.0",
-    "sass-middleware": "0.0.3",
-    "send": "^0.12.2",
-    "serve-static": "^1.9.2",
     "shasum": "^1.0.1",
-    "stringify": "^3.1.0",
-    "through": "^2.3.7",
-    "through2": "^0.6.5",
-    "trumpet": "^1.7.1",
-    "uglify-js": "^2.4.21",
-    "vinyl-transform": "^1.0.0"
+    "uglify-js": "^2.4.22"
   },
-  "main": "src/SessionModule.js"
+  "devDependencies": {
+    "compression": "^1.4.4",
+    "express": "^4.12.3",
+    "react": "^0.13.3"
+  },
+  "main": "src/SessionModule.js",
+  "description": "Node server that serves up a storm",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@gitlab.eezipay.co.za:storm-node/storm-serve.git"
+  },
+  "license": "ISC"
 }

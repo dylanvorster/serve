@@ -94,39 +94,42 @@ module.exports = {
 	 *
 	 * @returns {Boolean}
 	 */
-	handleIndex : function (request, response) {
+	handleIndex : function (request, response, next) {
 		if (request.url === "/" || request.url === '/index.html') {
 			request.url = "/index.html";
-			var stream = fs.createReadStream(this.getPath(request.url));
-			stream.on('error', function (error) {
-				console.error("Caught", error);
-				response.writeHead(500);
-				response.end();
-			});
+			var content = fs.readFileSync(this.getPath(request.url)).toString();
 
 			//generate a unique session token that does not exist yet
 			var sessionID = this.generateSession(),
 				generateExternalScript = _.template('\n<script src="${ file }?CACHE_ID='+sessionID+'"></script>'),
 				generateInlineScript = _.template('\n<script>${ code }</script>'),
-				injectedScripts = 
+				injectedScripts =
 					//this is the variable that will be the session ID
 					generateInlineScript({code : 'window.CACHE_ID = "' + sessionID + '";'}) +
-					//this is the file that you can use to load modules
+						//this is the file that you can use to load modules
 					generateExternalScript({file : 'LoadModule.js'});
-			
+
 			//extra script files to be injected
 			injectedScripts += this.settings.extraScripts.reduce(function (prev, curr) {
 				return prev + generateExternalScript({file: curr});
 			}, "");
-				
+
 			//extra script source code to be injected
-		injectedScripts += this.settings.extraScript.reduce(function (prev, curr) {
+			injectedScripts += this.settings.extraScript.reduce(function (prev, curr) {
 				return prev + generateInlineScript({code: curr});
 			}, "");
-			
-			stream = stream.pipe(replaceStream(/(<script[\w\s]+src=")([^"]+)("[^\>]*><\/script>)/g, '$1$2?CACHE_ID=' + sessionID + '$3'));
-			stream = stream.pipe(replaceStream(/<head>/g, "<head>"+injectedScripts));
-			stream.pipe(response);
+
+
+			content = content.replace(/(<script[\w\s]+src=")([^"]+)("[^\>]*><\/script>)/g, '$1$2?CACHE_ID=' + sessionID + '$3');
+			content = content.replace(/<head>/g, "<head>"+injectedScripts);
+
+			//extra transforms for index.html's content
+			if(this.settings.indexTransform) {
+				content = this.settings.indexTransform(content);
+			}
+			response.write(content);
+			response.end();
+			next();
 		}
 	},
 
@@ -257,7 +260,7 @@ module.exports.main = function (options) {
 
 		if (pathname === '/' || path.extname(pathname) === '.html') {
 			logger.debug("trying to serve index: " + pathname);
-			module.exports.handleIndex(request, response, parsedURL);
+			module.exports.handleIndex(request, response, next);
 		} else if (path.extname(pathname) === '.js') {
 			response.setHeader('Content-Type', 'application/javascript');
 			logger.debug("trying to serve javascript: " + pathname);
@@ -272,7 +275,6 @@ module.exports.scss = function (options) {
 	options = options || {};
 	
 	var autoprefixer	= require("autoprefixer-core"),
-		postcss			= require("postcss"),
 		sass			= require("node-sass"),
 		defaults = {
 			scss : {},
@@ -299,26 +301,17 @@ module.exports.scss = function (options) {
 			else{
 				options.scss.data = finalData.src;
 			}
-			sass.render(options.scss, function (err, result) {
-				options.scss.file = null;
-				options.scss.data = null;
-				
-				if (err) {
-					options.error(err, response);
-					response.writeHead(500);
-					response.end();
-					return false;
-				}
 
-				postcss()
-					.use(autoprefixer(options.autoprefixer))
-					.process(result.css)
-					.then(function (res) {
-						response.writeHead(200);
-						response.write(res.css);
-						response.end();
-					});
-			});
+			var css = sass.renderSync(options.scss).css;
+			
+			//clean variables
+			options.scss.file = null;
+			options.scss.data = null;
+			
+			css = autoprefixer.process(css, options.autoprefixer).css
+			response.writeHead(200);
+			response.write(css);
+			response.end();
 		} else {
 			next();
 		}

@@ -1,5 +1,4 @@
 var loadScript = require("load-script");
-var _merge = require("lodash/object/merge");
 
 /**
  * Loads Javascript modules into the browser
@@ -14,7 +13,8 @@ window.loadModule = function(file,cb){
 	};
 	if(typeof file === 'object'){
 		f = file.file;
-		params = _merge(file.params,params);
+		params = file.params || {};
+		params.CACHE_ID = window.CACHE_ID;
 	}
 	var final = f+"?";
 	for(var i in params){

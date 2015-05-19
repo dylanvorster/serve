@@ -129,7 +129,6 @@ module.exports = {
 			}
 			response.write(content);
 			response.end();
-			next();
 		}
 	},
 

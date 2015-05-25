@@ -10,7 +10,6 @@ var moduleDeps = require("module-deps"),
 	fs = require("fs"),
 	path = require('path');
 
-process.env.NODE_ENV = "production";
 /**
  * @author Dylan Vorster
  */
@@ -29,6 +28,8 @@ module.exports = {
 	},
 	scanJavascript : function (file, cb, opts) {
 		opts = opts || {};
+		
+		process.env.NODE_ENV = (opts.production === false)?'development':'production';
 		
 		//we have a function for this becuase 'file' could also be an object
 		//in which case we need a different key

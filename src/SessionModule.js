@@ -129,7 +129,6 @@ module.exports = {
 			}
 			response.write(content);
 			response.end();
-			next();
 		}
 	},
 
@@ -298,7 +297,13 @@ module.exports.scss = function (options) {
 			else{
 				options.scss.data = finalData.src;
 			}
+
 			var css = sass.renderSync(options.scss).css;
+			
+			//clean variables
+			options.scss.file = null;
+			options.scss.data = null;
+			
 			css = autoprefixer.process(css, options.autoprefixer).css
 			response.writeHead(200);
 			response.write(css);

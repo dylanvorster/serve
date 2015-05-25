@@ -192,16 +192,12 @@ module.exports = {
 		for (var i = 0; i < this.settings.handlers.length; i++) {
 			var data = this.settings.handlers[ i ](queryObject);
 			if (data) {
-				resultingObject = data;
-				break;
+				return data;
 			}
 		}
 
 		//check the path mappings if the handlers could not deal with the request
-		if (resultingObject === null) {
-			resultingObject = this.getPath(queryObject.pathname);
-		}
-		return resultingObject;
+		return this.getPath(queryObject.pathname);
 	},
 
 	/**
@@ -239,7 +235,7 @@ module.exports = {
 				return resolved;
 			}
 		}
-		return url;
+		return false;
 	}
 };
 
@@ -261,11 +257,12 @@ module.exports.main = function (options) {
 		if (pathname === '/' || path.extname(pathname) === '.html') {
 			logger.debug("trying to serve index: " + pathname);
 			module.exports.handleIndex(request, response, next);
-		} else if (path.extname(pathname) === '.js') {
+		} else if (path.extname(pathname) === '.js' && module.exports.resolve(parsedURL)) {
 			response.setHeader('Content-Type', 'application/javascript');
 			logger.debug("trying to serve javascript: " + pathname);
 			module.exports.handleJavascript(request, response, parsedURL);
 		} else {
+			logger.info("skipping: " + pathname);
 			next();
 		}
 	};

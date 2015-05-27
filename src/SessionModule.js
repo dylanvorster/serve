@@ -126,7 +126,6 @@ module.exports = {
 
 			//extra transforms for index.html's content
 			if (this.settings.indexTransform) {
-				console.log(this.settings);
 				content = this.settings.indexTransform(request, content);
 			}
 			response.write(content);

@@ -3,10 +3,15 @@ var SessionModule = require("../"),
 	express = require('express'),
 	fs = require('fs'),
 	path = require('path'),
-	app = express();
+	app = express(),
+	React = require("react"),
+	_ = require("lodash");
 
 app.use(compression());
 app.use(SessionModule.main({
+	/*
+	 * @required
+	 */
 	mappings : {
 		"/index.html" : __dirname + "/../tests/index.html",
 		"/+(a|d).js" : __dirname + "/../tests/js",
@@ -15,6 +20,21 @@ app.use(SessionModule.main({
 			return {src: "console.log('test1 worked');"};
 		}
 	},
+	/*
+	 * @optional
+	 */
+	indexTransform: function(content){
+		
+		//required for react to work
+		process.env.NODE_ENV = 'development';
+		var data = {
+			react : React.renderToString(React.createElement('div',{},"Test Index Transform"))
+		};
+		return (_.template(content))(data);
+	},
+	/*
+	 * @optional
+	 */
 	handlers: [
 		function test2(queryObject){
 			if(queryObject.pathname === '/test2.js'){
@@ -27,9 +47,15 @@ app.use(SessionModule.main({
 			}
 		}
 	],
+	/*
+	 * @optional
+	 */
 	aliases : {
 		"react" : __dirname + "/../node_modules/react/dist/react.js"
 	},
+	/*
+	 * @optional
+	 */
 	deps : {
 		uglify: {},
 		moduleDeps : {

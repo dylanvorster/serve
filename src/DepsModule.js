@@ -72,7 +72,6 @@ module.exports = {
 		var files = [];
 		var hashes = {};
 		md.on('data', function (row) {
-
 			//only watch each file once
 			if (this.gazeCache[ row.id ] === undefined) {
 				this.gazeCache[ row.id ] = true;

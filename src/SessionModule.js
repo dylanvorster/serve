@@ -24,7 +24,7 @@ String.prototype.endsWith = function (suffix) {
  */
 module.exports = {
 	settings : {
-		
+
 		//cache for the sentFiles
 		sentFiles : {},
 
@@ -86,7 +86,7 @@ module.exports = {
 			return false;
 		}
 		return this.settings.sentFiles[ sessionID ][ file ] !== undefined;
-		
+
 	},
 
 	/**
@@ -101,31 +101,33 @@ module.exports = {
 
 			//generate a unique session token that does not exist yet
 			var sessionID = this.generateSession(),
-				generateExternalScript = _.template('\n<script src="${ file }?CACHE_ID='+sessionID+'"></script>'),
+				generateExternalScript = _.template('\n<script src="${ file }?CACHE_ID=' + sessionID + '"></script>'),
 				generateInlineScript = _.template('\n<script>${ code }</script>'),
 				injectedScripts =
 					//this is the variable that will be the session ID
-					generateInlineScript({code : 'window.CACHE_ID = "' + sessionID + '";'}) +
+					generateInlineScript({ code : 'window.CACHE_ID = "' + sessionID + '";' }) +
 						//this is the file that you can use to load modules
-					generateExternalScript({file : 'LoadModule.js'});
+					generateExternalScript({ file : 'LoadModule.js' });
 
 			//extra script files to be injected
 			injectedScripts += this.settings.extraScripts.reduce(function (prev, curr) {
-				return prev + generateExternalScript({file: curr});
+				return prev + generateExternalScript({ file : curr });
 			}, "");
 
 			//extra script source code to be injected
 			injectedScripts += this.settings.extraScript.reduce(function (prev, curr) {
-				return prev + generateInlineScript({code: curr});
+				return prev + generateInlineScript({ code : curr });
 			}, "");
 
-
-			content = content.replace(/(<script[\w\s]+src=")([^"]+)("[^\>]*><\/script>)/g, '$1$2?CACHE_ID=' + sessionID + '$3');
-			content = content.replace(/<head>/g, "<head>"+injectedScripts);
+			content =
+				content.replace(/(<script[\w\s]+src=")([^"]+)("[^\>]*><\/script>)/g, '$1$2?CACHE_ID=' + sessionID +
+				'$3');
+			content = content.replace(/<head>/g, "<head>" + injectedScripts);
 
 			//extra transforms for index.html's content
-			if(this.settings.indexTransform) {
-				content = this.settings.indexTransform(content);
+			if (this.settings.indexTransform) {
+				console.log(this.settings);
+				content = this.settings.indexTransform(request, content);
 			}
 			response.write(content);
 			response.end();
@@ -139,7 +141,7 @@ module.exports = {
 	 * @param {type} response
 	 * @returns {Boolean}
 	 */
-	handleJavascript : function (request, response,queryObject) {
+	handleJavascript : function (request, response, queryObject) {
 
 		//we only care about javascript files
 		var resultingObject = this.resolve(queryObject);
@@ -159,7 +161,7 @@ module.exports = {
 
 		//browserify the file without checking for dependencies
 		if (sessionID !== undefined) {
-			
+
 			DepsModule.scanJavascript(resultingObject, function (files) {
 				var pack = require('browser-pack')({
 					raw : true,
@@ -178,13 +180,13 @@ module.exports = {
 
 		}
 	},
-	
+
 	/**
 	 * Resolves the queryObject through the handlers and the path mappings
-	 * 
+	 *
 	 * @param {type} queryObject
 	 */
-	resolve: function(queryObject){
+	resolve : function (queryObject) {
 		var resultingObject = null;
 
 		//first check the handlers to see if they can intercept
@@ -248,7 +250,7 @@ module.exports.main = function (options) {
 
 	//sort the mappings accoring to absolute paths first
 	return function (request, response, next) {
-		
+
 		var parsedURL = url.parse(request.url, true);
 		//we only care about javascript files
 		var pathname = parsedURL.pathname;
@@ -266,45 +268,47 @@ module.exports.main = function (options) {
 		}
 	};
 };
+module.exports.processSCSS = function (options) {
+	var autoprefixer = require("autoprefixer-core"),
+		sass = require("node-sass"),
+		css = sass.renderSync(options.scss).css;
 
+	return autoprefixer.process(css, options.autoprefixer).css
+}
 module.exports.scss = function (options) {
 	options = options || {};
-	
-	var autoprefixer	= require("autoprefixer-core"),
-		sass			= require("node-sass"),
-		defaults = {
-			scss : {},
-			error : function (err) {
-				console.error(err);
-			},
-			autoprefixer : { browsers : [ '> 1%', 'IE 9' ] }
-		};
-		
+
+	var defaults = {
+		scss : {},
+		error : function (err) {
+			console.error(err);
+		},
+		autoprefixer : { browsers : [ '> 1%', 'IE 9' ] }
+	};
+
 	options = _.assign(defaults, options);
 	return function (request, response, next) {
 		var parsedURL = url.parse(request.url, true);
 		if (path.extname(parsedURL.pathname) === '.scss') {
 			response.setHeader('Content-Type', 'text/css');
-			
-			
+
 			var finalData = module.exports.resolve(parsedURL);
-			
+
 			//file was requested
-			if(typeof finalData === 'string'){
+			if (typeof finalData === 'string') {
 				options.scss.file = finalData;
 			}
 			//source code was given
-			else{
+			else {
 				options.scss.data = finalData.src;
 			}
 
-			var css = sass.renderSync(options.scss).css;
-			
+			var css = module.exports.processSCSS(options);
+
 			//clean variables
 			options.scss.file = null;
 			options.scss.data = null;
-			
-			css = autoprefixer.process(css, options.autoprefixer).css
+
 			response.writeHead(200);
 			response.write(css);
 			response.end();

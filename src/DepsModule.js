@@ -75,7 +75,7 @@ module.exports = {
 			//only watch each file once
 			if (this.gazeCache[ row.id ] === undefined) {
 				this.gazeCache[ row.id ] = true;
-				gaze(row.id, function (err, watcher) {
+				gaze(row.id,opts.gaze || {}, function (err, watcher) {
 					watcher.on('changed', function (filepath) {
 						logger.info(filepath + ' was changed');
 

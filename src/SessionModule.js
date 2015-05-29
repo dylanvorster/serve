@@ -186,7 +186,6 @@ module.exports = {
 	 * @param {type} queryObject
 	 */
 	resolve : function (queryObject) {
-		var resultingObject = null;
 
 		//first check the handlers to see if they can intercept
 		for (var i = 0; i < this.settings.handlers.length; i++) {
@@ -238,6 +237,31 @@ module.exports = {
 		return false;
 	}
 };
+
+module.exports.cacheBuster = function (port) {
+	var http = require('http');
+	http.createServer(function (req, res) {
+		
+		//request to bust cache
+		var parsedURL = url.parse(req.url, true);
+		if(parsedURL.query && parsedURL.query.file){
+			logger.info("busting cache:"+parsedURL.query.file);
+			delete DepsModule.depsCache[ parsedURL.query.file ];
+		}
+		
+		
+		logger.info("serving cache buster interface");
+		var text = "<!DOCTYPE html><html><head><style>*{ font-family: 'Arial';}</style></head><body>";
+		for (var i in DepsModule.depsCache) {
+			text+="<a href=\"?file="+encodeURIComponent(i)+"\">"+path.basename(i)+"</a><br>";
+		}
+		text+="</body></html>";
+		
+		res.writeHead(200, {'Content-Type': 'text/html'});
+		res.end(text);
+	}).listen(port||9615);
+	logger.info("Starting cache buster on port: "+port);
+},
 
 /**
  * Handy method for serving all javascript and index requests

@@ -20,18 +20,18 @@ app.use(SessionModule.main({
 			return {src: "console.log('test1 worked');"};
 		}
 	},
-	/*
-	 * @optional
-	 */
-	indexTransform: function(content){
-		
-		//required for react to work
-		process.env.NODE_ENV = 'development';
-		var data = {
-			react : React.renderToString(React.createElement('div',{},"Test Index Transform"))
-		};
-		return (_.template(content))(data);
-	},
+//	/*
+//	 * @optional
+//	 */
+//	indexTransform: function(content){
+//		
+//		//required for react to work
+//		process.env.NODE_ENV = 'development';
+//		var data = {
+//			react : React.renderToString(React.createElement('div',{},"Test Index Transform"))
+//		};
+//		return (_.template(content))(data);
+//	},
 	/*
 	 * @optional
 	 */
@@ -68,5 +68,9 @@ app.use(SessionModule.main({
 }));
 app.use(SessionModule.scss());
 app.use(express.static(path.resolve(path.join(__dirname,'static'))));
+
 app.listen(3000);
 console.info("http started on port: 3000 from folder "+__dirname);
+
+SessionModule.cacheBuster(3001);
+console.info("http cache buster started on port 30001");

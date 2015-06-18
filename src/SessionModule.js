@@ -257,13 +257,16 @@ module.exports.main = function (options) {
 		if (pathname === '/' || path.extname(pathname) === '.html') {
 			logger.debug("trying to serve index: " + pathname);
 			module.exports.handleIndex(request, response, next);
-		} else if (path.extname(pathname) === '.js' && module.exports.resolve(parsedURL)) {
-			response.setHeader('Content-Type', 'application/javascript');
-			logger.debug("trying to serve javascript: " + pathname);
-			module.exports.handleJavascript(request, response, parsedURL);
 		} else {
-			logger.info("skipping: " + pathname);
-			next();
+			var resolvedURL = module.exports.resolve(parsedURL);
+			if ((resolvedURL.extname || path.extname(resolvedURL)) === '.js') {
+				response.setHeader('Content-Type', 'application/javascript');
+				logger.debug("trying to serve javascript: " + pathname);
+				module.exports.handleJavascript(request, response, parsedURL);
+			} else {
+				logger.info("SessionModule.main skipping: " + pathname);
+				next();
+			}
 		}
 	};
 };
@@ -288,18 +291,18 @@ module.exports.scss = function (options) {
 	options = _.assign(defaults, options);
 	return function (request, response, next) {
 		var parsedURL = url.parse(request.url, true);
-		if (path.extname(parsedURL.pathname) === '.scss') {
+		var resolvedURL = module.exports.resolve(parsedURL);
+		if ((resolvedURL.extname || path.extname(resolvedURL)) === '.scss') {
 			response.setHeader('Content-Type', 'text/css');
-
-			var finalData = module.exports.resolve(parsedURL);
+			logger.debug("Trying to serve SCSS: " + parsedURL.pathname);
 
 			//file was requested
-			if (typeof finalData === 'string') {
-				options.scss.file = finalData;
+			if (typeof resolvedURL === 'string') {
+				options.scss.file = resolvedURL;
 			}
 			//source code was given
 			else {
-				options.scss.data = finalData.src;
+				options.scss.data = resolvedURL.src;
 			}
 
 			var css = module.exports.processSCSS(options);
@@ -312,6 +315,7 @@ module.exports.scss = function (options) {
 			response.write(css);
 			response.end();
 		} else {
+			logger.info("SessionModule.scss skipping: " + parsedURL.pathname);
 			next();
 		}
 	};

@@ -17,25 +17,16 @@ module.exports = {
 
 	//caches
 	gazeCache:		{},
-	depsCache:		{},
 	uglifyCache:	{},
-	
-	getKeyForRequest: function(req){
-		if(typeof req === 'object'){
-			return req.src;
-		}
-		return req;
-	},
+	cache: {},
+
 	scanJavascript : function (file, cb, opts) {
 		opts = opts || {};
 		
 		process.env.NODE_ENV = (opts.production === false)?'development':'production';
 		
-		//we have a function for this becuase 'file' could also be an object
-		//in which case we need a different key
-		var key = this.getKeyForRequest(file);
-		
 		var moduleDepsDefaults = {
+			cache: this.cache,
 			transformKey : [ 'browserify', 'transform' ],
 			globalTransform : [
 				//insert globals
@@ -61,44 +52,24 @@ module.exports = {
 		//merge in the options
 		_.merge(moduleDepsDefaults, opts.moduleDeps);
 		
-		//first check the cache
-		if (this.depsCache[ key ] !== undefined) {
-			logger.debug("using deps cache for: " + key);
-			cb(this.depsCache[ key ]);
-			return;
-		}
 		logger.debug("building deps tree for: " + file);
 		var md = moduleDeps(moduleDepsDefaults);
+		
+		
 		var files = [];
 		var hashes = {};
 		md.on('data', function (row) {
+			var id = row.id;
+			this.cache[id] = _.clone(row,true);
+			
 			//only watch each file once
 			if (this.gazeCache[ row.id ] === undefined) {
 				this.gazeCache[ row.id ] = true;
-				gaze(row.id, function (err, watcher) {
+				gaze(row.id,opts.gaze || {}, function (err, watcher) {
 					watcher.on('changed', function (filepath) {
 						logger.info(filepath + ' was changed');
-
-						//bust child files
-						for (var i in this.depsCache) {
-							var index = _.findIndex(this.depsCache[ i ], 'filename', filepath);
-							if (index !== -1) {
-								logger.debug("busting child and parent cache: " + i);
-								delete this.depsCache[ i ];
-							}
-						}
-						//bust parent file
-						if (this.depsCache[ filepath ] !== undefined) {
-							logger.debug("busting parent cache: " + filepath);
-							delete this.depsCache[ filepath ];
-						}
-
-						//bust the uglify cache
-						if (this.uglifyCache[ filepath ] !== undefined) {
-							logger.debug("busting uglify cache: " + filepath);
-							delete this.uglifyCache[ filepath ];
-						}
-
+						delete this.cache[id];
+						delete this.uglifyCache[id];
 					}.bind(this));
 				}.bind(this));
 			}
@@ -107,7 +78,7 @@ module.exports = {
 			files.push(row);
 		}.bind(this));
 		md.on('end', function () {
-
+			
 			//remove duplicates
 			files = unique(files, 'source');
 			files.forEach(function (file) {
@@ -136,8 +107,6 @@ module.exports = {
 					file.deps[ key ] = hashes[ file.deps[ key ] ];
 				});
 			}.bind(this));
-			
-			this.depsCache[key] = files;
 			cb(files);
 		}.bind(this));
 		

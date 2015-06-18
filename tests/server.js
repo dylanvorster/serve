@@ -60,10 +60,17 @@ app.use(SessionModule.main({
 		uglify: {},
 		moduleDeps : {
 			//noParse : [ 'react', 'lodash' ]
+		},
+		gaze: {
+			mode: 'poll'
 		}
 	}
 }));
 app.use(SessionModule.scss());
 app.use(express.static(path.resolve(path.join(__dirname,'static'))));
+
 app.listen(3000);
 console.info("http started on port: 3000 from folder "+__dirname);
+
+SessionModule.cacheBuster(3001);
+console.info("http cache buster started on port 30001");

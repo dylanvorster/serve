@@ -101,7 +101,7 @@ module.exports = {
 
 			//generate a unique session token that does not exist yet
 			var sessionID = this.generateSession(),
-				generateExternalScript = _.template('\n<script src="${ file }?CACHE_ID=' + sessionID + '"></script>'),
+				generateExternalScript = _.template('\n<script src="/${ file }?CACHE_ID=' + sessionID + '"></script>'),
 				generateInlineScript = _.template('\n<script>${ code }</script>'),
 				injectedScripts =
 					//this is the variable that will be the session ID

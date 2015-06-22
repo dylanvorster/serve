@@ -15,6 +15,7 @@
     "minimatch": "^2.0.8",
     "module-deps": "^3.7.12",
     "node-sass": "^3.1.1",
+    "postcss": "^4.1.12",
     "replacestream": "^2.1.0",
     "shasum": "^1.0.1",
     "uglify-js": "^2.4.22"

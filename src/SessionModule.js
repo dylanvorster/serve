@@ -295,11 +295,12 @@ module.exports.main = function (options) {
 	};
 };
 module.exports.processSCSS = function (options) {
+	
 	var autoprefixer = require("autoprefixer-core"),
+		postcss = require("postcss"),
 		sass = require("node-sass"),
 		css = sass.renderSync(options.scss).css;
-
-	return autoprefixer.process(css, options.autoprefixer).css
+	return postcss([ autoprefixer ]).process(css).css;
 }
 module.exports.scss = function (options) {
 	options = options || {};

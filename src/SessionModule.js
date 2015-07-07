@@ -63,7 +63,7 @@ module.exports = {
 
 	/**
 	 * Generates a unique Session ID
-	 * @returns {SessionModule_L49@call;generateUID}
+	 * @returns {String}
 	 */
 	generateSession : function () {
 		do {
@@ -101,7 +101,7 @@ module.exports = {
 
 			//generate a unique session token that does not exist yet
 			var sessionID = this.generateSession(),
-				generateExternalScript = _.template('\n<script src="${ file }?CACHE_ID=' + sessionID + '"></script>'),
+				generateExternalScript = _.template('\n<script src="/${ file }?CACHE_ID=' + sessionID + '"></script>'),
 				generateInlineScript = _.template('\n<script>${ code }</script>'),
 				injectedScripts =
 					//this is the variable that will be the session ID
@@ -281,22 +281,26 @@ module.exports.main = function (options) {
 		if (pathname === '/' || path.extname(pathname) === '.html') {
 			logger.debug("trying to serve index: " + pathname);
 			module.exports.handleIndex(request, response, next);
-		} else if (path.extname(pathname) === '.js' && module.exports.resolve(parsedURL)) {
-			response.setHeader('Content-Type', 'application/javascript');
-			logger.debug("trying to serve javascript: " + pathname);
-			module.exports.handleJavascript(request, response, parsedURL);
 		} else {
-			logger.info("skipping: " + pathname);
-			next();
+			var resolvedURL = module.exports.resolve(parsedURL);
+			if ((resolvedURL.extname || path.extname(resolvedURL)) === '.js') {
+				response.setHeader('Content-Type', 'application/javascript');
+				logger.debug("trying to serve javascript: " + pathname);
+				module.exports.handleJavascript(request, response, parsedURL);
+			} else {
+				logger.info("SessionModule.main skipping: " + pathname);
+				next();
+			}
 		}
 	};
 };
 module.exports.processSCSS = function (options) {
+	
 	var autoprefixer = require("autoprefixer-core"),
+		postcss = require("postcss"),
 		sass = require("node-sass"),
 		css = sass.renderSync(options.scss).css;
-
-	return autoprefixer.process(css, options.autoprefixer).css
+	return postcss([ autoprefixer ]).process(css).css;
 }
 module.exports.scss = function (options) {
 	options = options || {};
@@ -312,18 +316,18 @@ module.exports.scss = function (options) {
 	options = _.assign(defaults, options);
 	return function (request, response, next) {
 		var parsedURL = url.parse(request.url, true);
-		if (path.extname(parsedURL.pathname) === '.scss') {
+		var resolvedURL = module.exports.resolve(parsedURL);
+		if ((resolvedURL.extname || path.extname(resolvedURL)) === '.scss') {
 			response.setHeader('Content-Type', 'text/css');
-
-			var finalData = module.exports.resolve(parsedURL);
+			logger.debug("Trying to serve SCSS: " + parsedURL.pathname);
 
 			//file was requested
-			if (typeof finalData === 'string') {
-				options.scss.file = finalData;
+			if (typeof resolvedURL === 'string') {
+				options.scss.file = resolvedURL;
 			}
 			//source code was given
 			else {
-				options.scss.data = finalData.src;
+				options.scss.data = resolvedURL.src;
 			}
 
 			var css = module.exports.processSCSS(options);
@@ -336,6 +340,7 @@ module.exports.scss = function (options) {
 			response.write(css);
 			response.end();
 		} else {
+			logger.info("SessionModule.scss skipping: " + parsedURL.pathname);
 			next();
 		}
 	};

@@ -17,28 +17,28 @@ app.use(SessionModule.main({
 		"/+(a|d).js" : __dirname + "/../tests/js",
 		"/*.scss" : __dirname + "/../tests/sass",
 		"/test1.js"	  : function(url){
-			return {src: "console.log('test1 worked');"};
+			return {src: "console.log('test1 worked');", extname:'.js'};
 		}
 	},
-//	/*
-//	 * @optional
-//	 */
-//	indexTransform: function(content){
-//		
-//		//required for react to work
-//		process.env.NODE_ENV = 'development';
-//		var data = {
-//			react : React.renderToString(React.createElement('div',{},"Test Index Transform"))
-//		};
-//		return (_.template(content))(data);
-//	},
+	/*
+	 * @optional
+	 */
+	indexTransform: function(request, content){
+		
+		//required for react to work
+		process.env.NODE_ENV = 'development';
+		var data = {
+			react : React.renderToString(React.createElement('div',{},"Test Index Transform"))
+		};
+		return (_.template(content))(data);
+	},
 	/*
 	 * @optional
 	 */
 	handlers: [
 		function test2(queryObject){
 			if(queryObject.pathname === '/test2.js'){
-				return {src:"console.log('test2 worked');"};
+				return {src:"console.log('test2 worked');", extname: '.js'};
 			}
 		},
 		function test3(queryObject){

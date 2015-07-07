@@ -71,9 +71,9 @@ module.exports = {
 				if (!this.watcher) {
 					this.watcher = chokidar.watch(row.id, {
 						ignored: /[\/\\]\./,
-						persistent: true
-						//usePolling: true,
-						//interval: 300
+						persistent: true,
+						usePolling: true,
+						interval: 300
 					});
 					
 					this.watcher.on('change', function (path) {
@@ -85,6 +85,7 @@ module.exports = {
 					this.watcher.add(row.id);
 				}
 
+				// Old Gaze code.
 				/*gaze(row.id, opts.gaze || {}, function (err, watcher) {
 					watcher.on('changed', function (filepath) {
 						logger.info(filepath + ' was changed');

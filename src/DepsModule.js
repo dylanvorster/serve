@@ -3,7 +3,8 @@ var moduleDeps = require("module-deps"),
 	insert = require("insert-module-globals"),
 	unique = require("lodash/array/uniq"),
 	UglifyJS = require("uglify-js"),
-	gaze = require("gaze"),
+	//gaze = require("gaze"),
+	chokidar = require("chokidar");
 	_ = require("lodash"),
 	logger = require('log4js').getLogger("Module Deps"),
 	resolve = require("browser-resolve"),
@@ -18,7 +19,8 @@ module.exports = {
 	//caches
 	gazeCache:		{},
 	uglifyCache:	{},
-	cache: {},
+	cache:			{},
+	watcher:		null,
 
 	scanJavascript : function (file, cb, opts) {
 		opts = opts || {};
@@ -65,13 +67,32 @@ module.exports = {
 			//only watch each file once
 			if (this.gazeCache[ row.id ] === undefined) {
 				this.gazeCache[ row.id ] = true;
-				gaze(row.id,opts.gaze || {}, function (err, watcher) {
+				
+				if (!this.watcher) {
+					this.watcher = chokidar.watch(row.id, {
+						ignored: /[\/\\]\./,
+						persistent: true
+						//usePolling: true,
+						//interval: 300
+					});
+					
+					this.watcher.on('change', function (path) {
+						logger.info(path + ' was changed');
+						delete this.cache[path];
+						delete this.uglifyCache[path];
+					}.bind(this));
+				} else {
+					this.watcher.add(row.id);
+				}
+
+				/*gaze(row.id, opts.gaze || {}, function (err, watcher) {
 					watcher.on('changed', function (filepath) {
 						logger.info(filepath + ' was changed');
 						delete this.cache[id];
 						delete this.uglifyCache[id];
 					}.bind(this));
-				}.bind(this));
+				}.bind(this));*/
+				
 			}
 			row.filename = row.id;
 			hashes[ row.id ] = shasum(row.source);

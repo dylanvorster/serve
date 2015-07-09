@@ -1,0 +1,7 @@
+node:
+    build: ./
+    volumes:
+        - ./:/usr/src/myapp
+    ports:
+        - 9084:3000
+        - 9085:3001

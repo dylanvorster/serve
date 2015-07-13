@@ -1,14 +1,14 @@
-var moduleDeps = require("module-deps"),
-	shasum = require("shasum"),
-	insert = require("insert-module-globals"),
-	unique = require("lodash/array/uniq"),
-	UglifyJS = require("uglify-js"),
-	gaze = require("gaze"),
-	_ = require("lodash"),
-	logger = require('log4js').getLogger("Module Deps"),
-	resolve = require("browser-resolve"),
-	fs = require("fs"),
-	path = require('path');
+var moduleDeps	= require('module-deps');
+var shasum		= require('shasum');
+var insert		= require('insert-module-globals');
+var unique		= require('lodash/array/uniq');
+var UglifyJS	= require('uglify-js');
+var chokidar	= require('chokidar');
+var _			= require('lodash');
+var logger		= require('log4js').getLogger('Module Deps');
+var resolve		= require('browser-resolve');
+var path		= require('path');
+
 
 /**
  * @author Dylan Vorster
@@ -18,19 +18,22 @@ module.exports = {
 	//caches
 	gazeCache:		{},
 	uglifyCache:	{},
-	cache: {},
+	cache:			{},
+	watcher:		null,
 
 	scanJavascript : function (file, cb, opts) {
 		opts = opts || {};
 		
-		process.env.NODE_ENV = (opts.production === false)?'development':'production';
+		process.env.NODE_ENV = (opts.production === false) ? 'development' : 'production';
 		
 		var moduleDepsDefaults = {
-			cache: this.cache,
-			transformKey : [ 'browserify', 'transform' ],
-			globalTransform : [
+			cache:				this.cache,
+			transformKey :		['browserify', 'transform'],
+			globalTransform :	[
 				//insert globals
-				function (file) { return insert(file); }
+				function (file) {  
+					return insert(file); 
+				}
 				//<-register other transforms here
 			],
 
@@ -49,34 +52,50 @@ module.exports = {
 			}
 		};
 		
+		var chokidarDefaults = {
+			ignored:		/[\/\\]\./,
+			persistent:		true,
+			usePolling:		true,
+			interval:		700,
+			useFsEvents:	false,
+			ignoreInitial:	true
+		};
+		
 		//merge in the options
 		_.merge(moduleDepsDefaults, opts.moduleDeps);
+		_.merge(chokidarDefaults, opts.chokidar);
 		
 		logger.debug("building deps tree for: " + file);
 		var md = moduleDeps(moduleDepsDefaults);
 		
-		
-		var files = [];
-		var hashes = {};
+		var files	= [];
+		var hashes	= {};
 		md.on('data', function (row) {
-			var id = row.id;
-			this.cache[id] = _.clone(row,true);
+			var id			= row.id;
+			this.cache[id]	= _.clone(row,true);
 			
 			//only watch each file once
-			if (this.gazeCache[ row.id ] === undefined) {
-				this.gazeCache[ row.id ] = true;
-				gaze(row.id,opts.gaze || {}, function (err, watcher) {
-					watcher.on('changed', function (filepath) {
-						logger.info(filepath + ' was changed');
-						delete this.cache[id];
-						delete this.uglifyCache[id];
+			if (this.gazeCache[row.id] === undefined) {
+				this.gazeCache[row.id] = true;
+				
+				if (!this.watcher) {
+					this.watcher = chokidar.watch(row.id, chokidarDefaults);
+					
+					this.watcher.on('change', function (path) {
+						logger.info(path + ' was changed');
+						delete this.cache[path];
+						delete this.uglifyCache[path];
 					}.bind(this));
-				}.bind(this));
+				} else {
+					this.watcher.add(row.id);
+				}
 			}
-			row.filename = row.id;
-			hashes[ row.id ] = shasum(row.source);
+			
+			row.filename		= row.id;
+			hashes[ row.id ]	= shasum(row.source);
 			files.push(row);
 		}.bind(this));
+		
 		md.on('end', function () {
 			
 			//remove duplicates

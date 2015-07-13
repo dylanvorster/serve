@@ -60,9 +60,6 @@ app.use(SessionModule.main({
 		uglify: {},
 		moduleDeps : {
 			//noParse : [ 'react', 'lodash' ]
-		},
-		gaze: {
-			mode: 'poll'
 		}
 	}
 }));

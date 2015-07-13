@@ -57,17 +57,15 @@ app.use(SessionModule.main({
 	 * @optional
 	 */
 	deps : {
+		bustCache: false,
+		externalJSListener: {
+			port: 8889
+		},
 		uglify: {},
-		moduleDeps : {
-			//noParse : [ 'react', 'lodash' ]
-		}
+		moduleDeps : {}
 	}
 }));
 app.use(SessionModule.scss());
 app.use(express.static(path.resolve(path.join(__dirname,'static'))));
 
-app.listen(3000);
-console.info("http started on port: 3000 from folder "+__dirname);
-
-SessionModule.cacheBuster(3001);
-console.info("http cache buster started on port 30001");
+app.listen(8888);

@@ -36,7 +36,7 @@ module.exports = {
 
 		//these are first-class responders [function(queryObject){}] that are requested before the mappings are
 		handlers : [],
-
+		
 		//glob for the file serve
 		mappings : {
 			"/LoadModule.js" : __dirname + "/LoadModule.js"
@@ -46,7 +46,16 @@ module.exports = {
 		serveStatic : true,
 
 		//aliases for module paths
-		aliases : {}
+		aliases : {},
+		
+		//stuff passed into module deps
+		deps:{
+			bustCache: true,
+			externalJSListener: {
+				port: null,
+				sockets: {}
+			}
+		}
 	},
 
 	/**
@@ -238,31 +247,6 @@ module.exports = {
 	}
 };
 
-module.exports.cacheBuster = function (port) {
-	var http = require('http');
-	http.createServer(function (req, res) {
-		
-		//request to bust cache
-		var parsedURL = url.parse(req.url, true);
-		if(parsedURL.query && parsedURL.query.file){
-			logger.info("busting cache:"+parsedURL.query.file);
-			delete DepsModule.depsCache[ parsedURL.query.file ];
-		}
-		
-		
-		logger.info("serving cache buster interface");
-		var text = "<!DOCTYPE html><html><head><style>*{ font-family: 'Arial';}</style></head><body>";
-		for (var i in DepsModule.depsCache) {
-			text+="<a href=\"?file="+encodeURIComponent(i)+"\">"+path.basename(i)+"</a><br>";
-		}
-		text+="</body></html>";
-		
-		res.writeHead(200, {'Content-Type': 'text/html'});
-		res.end(text);
-	}).listen(port||9615);
-	logger.info("Starting cache buster on port: "+port);
-},
-
 /**
  * Handy method for serving all javascript and index requests
  */
@@ -270,6 +254,30 @@ module.exports.main = function (options) {
 
 	//merges in options
 	_.merge(module.exports.settings, options || {});
+	
+	
+	//start a middleware server to listen for host file changes
+	if(module.exports.settings.deps.externalJSListener.port){
+		console.log("starting a cache busting port: "+module.exports.settings.deps.externalJSListener.port);
+		var io = require('socket.io')(require('http').createServer());
+		io.listen(module.exports.settings.deps.externalJSListener.port);
+		module.exports.settings.deps.externalJSListener.io = io;
+		
+		io.on('connection',function(socket){
+			console.log('socket connected: '+socket.id);
+			module.exports.settings.deps.externalJSListener.sockets[socket.id] = socket;
+			
+			socket.on('file-changed',function(file){
+				delete DepsModule.cache[file];
+				delete DepsModule.uglifyCache[file];
+				console.log(file+"changed");
+			});
+			
+			socket.on('disconnect', function () {
+				delete module.exports.settings.deps.externalJSListener.sockets[socket.id];
+			});
+		});
+	}
 
 	//sort the mappings accoring to absolute paths first
 	return function (request, response, next) {
@@ -294,6 +302,7 @@ module.exports.main = function (options) {
 		}
 	};
 };
+
 module.exports.processSCSS = function (options) {
 	
 	var autoprefixer = require("autoprefixer-core"),
@@ -302,6 +311,7 @@ module.exports.processSCSS = function (options) {
 		css = sass.renderSync(options.scss).css;
 	return postcss([ autoprefixer ]).process(css).css;
 }
+
 module.exports.scss = function (options) {
 	options = options || {};
 

@@ -74,20 +74,28 @@ module.exports = {
 			var id			= row.id;
 			this.cache[id]	= _.clone(row,true);
 			
+			//using middleware for the cache busting
+			for(var i in opts.externalJSListener.sockets){
+				opts.externalJSListener.sockets[i].emit('new-file',row.id);
+			}
+			
 			//only watch each file once
 			if (this.gazeCache[row.id] === undefined) {
 				this.gazeCache[row.id] = true;
 				
-				if (!this.watcher) {
-					this.watcher = chokidar.watch(row.id, chokidarDefaults);
-					
-					this.watcher.on('change', function (path) {
-						logger.info(path + ' was changed');
-						delete this.cache[path];
-						delete this.uglifyCache[path];
-					}.bind(this));
-				} else {
-					this.watcher.add(row.id);
+				//using internal gazing for the cache busting
+				if(opts.bustCache){
+					if (!this.watcher) {
+						this.watcher = chokidar.watch(row.id, chokidarDefaults);
+
+						this.watcher.on('change', function (path) {
+							logger.info(path + ' was changed');
+							delete this.cache[path];
+							delete this.uglifyCache[path];
+						}.bind(this));
+					} else {
+						this.watcher.add(row.id);
+					}
 				}
 			}
 			

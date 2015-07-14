@@ -1,6 +1,5 @@
 var url = require("url");
 var fs = require("fs");
-var replaceStream = require("replacestream");
 var minimatch = require("minimatch");
 var _ = require("lodash");
 var logger = require("log4js").getLogger("Serve Module");

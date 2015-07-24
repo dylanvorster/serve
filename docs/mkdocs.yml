@@ -1,0 +1,6 @@
+site_name: Serve
+theme_dir: theme
+pages:
+    - Home: index.md
+    - User Guide: guide.md
+    - Advanced Guide: advanced.md

@@ -96,6 +96,16 @@ This means you can return sass or javascript code directly, and it will be brows
 },
 </code></pre>
 
+<h1 id="setting-the-log-level">Setting the Log Level</h1>
+<pre><code class="javascript">loglevel : 'DEBUG' //INFO, DEBUG, TRACE, ERROR
+</code></pre>
+
+<h1 id="session-expiry-time">Session Expiry Time</h1>
+<p>The default Session expiry time is 1 hour</p>
+<p>To change this, simply set the variable: <strong>sessionExpire</strong> (this is in minutes)</p>
+<pre><code class="javascript">sessionExpire : 60*24 //24 hours
+</code></pre>
+
 <h1 id="index-transform-isomorphic-websites">Index Transform / Isomorphic Websites</h1>
 <p>When building isomorphic applications, you will want to do server side rendering. 
 In this case, provide an index transform, which is run just before STORM servers the <strong>index</strong> file.</p>
@@ -193,6 +203,18 @@ node container-node/node_modules/storm-serve/src/HostWatcher.js \
 					</li>
 				
 					<li><a  href="#mappings">Mappings</a>
+						<ul>
+							
+						</ul>
+					</li>
+				
+					<li><a  href="#setting-the-log-level">Setting the Log Level</a>
+						<ul>
+							
+						</ul>
+					</li>
+				
+					<li><a  href="#session-expiry-time">Session Expiry Time</a>
 						<ul>
 							
 						</ul>

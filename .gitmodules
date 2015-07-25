@@ -1,0 +1,3 @@
+[submodule "mkdocs/theme"]
+	path = mkdocs/theme
+	url = https://github.com/projectstorm/mkdocs-theme.git

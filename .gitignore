@@ -2,7 +2,7 @@
 
 #!! ERROR: n is undefined. Use list command to see defined gitignore types !!#
 
-docs/theme
+mkdocs/theme
 
 ### NetBeans ###
 nbproject/private/

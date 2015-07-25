@@ -1,0 +1,131 @@
+//roboto font
+*{
+	margin: 0;
+	padding: 0;
+}
+body,html{
+	height: 100%;
+	background-color: #f8f8f8
+}
+$menuHeight: 50px;
+.menubar{
+	position: fixed;
+	background: #282828;
+	font-family: roboto;
+	border-bottom: solid 1px rgba(black,0.15);
+	flex-grow: 0;
+	flex-shrink: 1;
+	align-items: center;
+	right: 0;
+	left: 0;
+	display: flex;
+	height: $menuHeight;
+	
+	h1{
+		color: white;
+		font-weight: 300;
+		font-size: 23px;
+		margin-left: 20px;
+		margin-right: 20px;
+	}
+	
+	img{
+		height: 30px;
+		margin-left: 30px;
+	}
+	ul{
+		display: flex;
+		li{
+			list-style: none;
+			
+			a{
+				padding: 16px;
+				color: white;
+				cursor: pointer;
+				text-decoration: none;
+			}
+
+			.active{
+				background: #f6f6f6;
+				color: black !important;
+			}
+		}
+	}
+}
+.hero{
+	font-family: roboto;
+	background-color: #f6f6f6;
+	padding: 40px;
+	padding-top: $menuHeight + 40px;
+	border-bottom: 1px solid rgba(black, 0.1);
+}
+.content{
+	font-family: roboto;
+	padding: 40px;
+	width: 700px;
+		
+	> *{
+		padding-bottom: 20px;
+	}
+	
+	ul{
+		padding-left: 20px;
+	}
+	h1,h2,h3,h4{
+		font-weight: 300;
+	}
+	p,li{
+		font-size: 13px;
+	}
+	code{
+		background-color: white;
+		padding: 20px;
+		border-radius: 10px;
+	}
+}
+.toc{
+	position: fixed;
+	right: 30px;
+	top: $menuHeight + 30px;
+	border-radius: 10px;
+	padding: 20px;
+	background-color: rgba(white,0.8);
+	$border: 3px;
+	$padding: 10px;
+	ul{
+		.active{
+			color: black;
+			border-left: $border solid rgb(0,192,255);
+			padding-left: $padding;
+		}
+		li{
+			a{
+				text-decoration: none;
+				display: block;
+				padding: 3px;
+				padding-left: $padding + $border;
+				cursor: pointer;
+				color: gray;
+			}
+			color: gray;
+			font-family: roboto;
+			list-style: none;
+			font-size: 14px;
+			ul{
+				
+				li{
+					.active{
+						padding-left: $padding + $padding;
+					}
+					a{
+						padding: 1px;
+						padding-left: $padding + $padding + $border;
+					}
+					font-size: 12px;
+				}
+			}
+		}
+	}
+}
+
+@import "./_highlight.scss";

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>STORM Serve</title>
+		<link type="text/css" rel="stylesheet" href="../node_modules/roboto-font/css/fonts.css">
+		<link type="text/css" rel="stylesheet" href="../css/theme.css">
+		<script type='text/javascript' src='../javascript/jquery.js'></script>
+		<script type='text/javascript' src='../javascript/uikit.min.js'></script>
+		<script type='text/javascript' src='../javascript/scrollspy.js'></script>
+		<script type='text/javascript' src='../javascript/highlight.js'></script>
+		<script type='text/javascript'>
+			$(document).ready(function() {
+				 hljs.initHighlightingOnLoad();
+			});
+		</script>
+	</head>
+	<body>
+		<div class="menubar">
+			<img src="../logo.png" />
+			<h1>Serve</h1>
+			<ul>
+				
+					
+					<li>
+						<a class="" href="..">Home</a>
+					</li>
+					
+				
+					
+					<li>
+						<a class="active" href="./">User Guide</a>
+					</li>
+					
+				
+					
+					<li>
+						<a class="" href="../advanced/">Advanced Guide</a>
+					</li>
+					
+				
+			</ul>
+		</div>
+		<div class="hero">
+			<h1>User Guide</h1>
+		</div>
+		<div class="content">
+			<h1 id="getting-started">Getting Started</h1>
+<p>The simplest way to get started with storm serve, is with the following directory structure:</p>
+<h2 id="directory-structure">Directory structure</h2>
+<pre><code>server.js
+index.html
+package.json
+
+node_modules
+    &lt;moduleshere&gt;
+media
+    logo.png
+sass
+    style.scss
+modules
+    main.js
+</code></pre>
+
+<h3 id="indexhtml">index.html</h3>
+<pre><code class="html">&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+    &lt;head&gt;
+        &lt;title&gt;My First Storm Website&lt;/title&gt;
+        &lt;meta charset=&quot;utf-8&quot;&gt;
+        &lt;script src=&quot;main.js&quot;&gt;&lt;/script&gt;
+        &lt;link rel=&quot;stylesheet&quot; href=&quot;main.scss&quot;/&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;img src=&quot;logo.png&quot;&gt;
+    &lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+
+<h3 id="serverjs">server.js</h3>
+<pre><code class="javascript">var StormServe  = require(&quot;storm-serve&quot;);
+var express     = require('express');
+
+var app = express();
+
+//serve javascript and index.html
+app.use(StormServe.main({
+
+    mappings:{
+        &quot;/index.html&quot;:  __dirname + &quot;/index.html&quot;,
+        &quot;/*.js&quot;:        __dirname + &quot;/javascript&quot;,
+        &quot;/*.scss&quot;:      __dirname + &quot;/sass&quot;,
+    },
+}));
+//serve css (that is converted from sass)
+app.use(StormServe.scss());
+
+//serve static files like images
+app.use(express.static(path.resolve(__dirname+&quot;/media&quot;)));
+
+//start the server on port 80
+app.listen(8080);
+</code></pre>
+
+<h3 id="mainjs">main.js</h3>
+<pre><code>var react = require(&quot;react&quot;)
+window.onload = function(){
+    React.render(React.DOM.h1(null,'Hello World!'),document.body)
+}
+</code></pre>
+
+<h3 id="stylescss">style.scss</h3>
+<pre><code class="sass">*{
+    margin: 0;
+    padding: 0;
+}
+
+body{
+    display: flex; //this is run through auto prefixer
+}
+</code></pre>
+
+<h2 id="next-steps">Next Steps</h2>
+<p>run this on your machine</p>
+<p><code>node server.js //this starts the web server</code></p>
+<p>and then open up your browser to </p>
+<p><code>http://localhost:8080</code></p>
+<p>Now wait while storm serve, compiles your website, and then eventually loads. After that perform a refresh and the site should load blazingly fast.</p>
+<h3 id="so-what-happened">So what happened</h3>
+<p>In this order, your browser will:</p>
+<ul>
+<li>
+<p>Serve the index file which will:</p>
+<ul>
+<li>Be injected with a window-variable used to identify this instance of the browser tab</li>
+<li>Inject a script which allows you to call window.loadModule</li>
+<li>Rewrite the links of all your script assets to include the window-variable</li>
+</ul>
+</li>
+<li>
+<p>Request main.scss and this will be redirected internally to /sass/main.scss which will then:</p>
+<ul>
+<li>Be converted to sass</li>
+<li>Run through auto prefixer</li>
+</ul>
+</li>
+<li>
+<p>Request main.js and this will be redirected internally to /javascript/main.js which will then:</p>
+<ul>
+<li>be run through a supercharged browserify pipeline</li>
+<li>apply any source transformations</li>
+<li>map the filenames to a hashed version of each files contents</li>
+<li>rewrite the requires(), so that they point to the hashed filenames</li>
+<li>serve the ES5 script to the browser</li>
+</ul>
+</li>
+</ul>
+		</div>
+		<nav class="toc">
+			<ul data-uk-scrollspy-nav="{cls:'active'}">
+				
+					<li><a class="active" href="#getting-started">Getting Started</a>
+						<ul>
+							
+								<li><a  href="#directory-structure">Directory structure</a></li>
+							
+								<li><a  href="#next-steps">Next Steps</a></li>
+							
+						</ul>
+					</li>
+				
+			</ul>
+		</nav>
+	</body>
+</html>

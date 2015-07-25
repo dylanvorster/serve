@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>STORM Serve</title>
+		<link type="text/css" rel="stylesheet" href="../node_modules/roboto-font/css/fonts.css">
+		<link type="text/css" rel="stylesheet" href="../css/theme.css">
+		<script type='text/javascript' src='../javascript/jquery.js'></script>
+		<script type='text/javascript' src='../javascript/uikit.min.js'></script>
+		<script type='text/javascript' src='../javascript/scrollspy.js'></script>
+		<script type='text/javascript' src='../javascript/highlight.js'></script>
+		<script type='text/javascript'>
+			$(document).ready(function() {
+				 hljs.initHighlightingOnLoad();
+			});
+		</script>
+	</head>
+	<body>
+		<div class="menubar">
+			<img src="../logo.png" />
+			<h1>Serve</h1>
+			<ul>
+				
+					
+					<li>
+						<a class="" href="..">Home</a>
+					</li>
+					
+				
+					
+					<li>
+						<a class="" href="../guide/">User Guide</a>
+					</li>
+					
+				
+					
+					<li>
+						<a class="active" href="./">Advanced Guide</a>
+					</li>
+					
+				
+			</ul>
+		</div>
+		<div class="hero">
+			<h1>Advanced Guide</h1>
+		</div>
+		<div class="content">
+			<h1 id="handlers">Handlers</h1>
+<p>In some cases, we need more than a file glob match to perform a function. For this purpose,
+STORM Serve allows you to register handlers (for example):</p>
+<pre><code class="javascript">handlers:[
+    function (queryParams) {
+        if (queryParams.pathname === 'somefile.js' &amp;&amp; queryParams.query.ID) {
+            return __dirname+&quot;/somefile.js&quot;;
+        }
+    }
+]
+</code></pre>
+
+<p>When working with handlers, you can return a file that will be served, or you can return an object containing
+<strong>src</strong> and <strong>extname</strong> fields. Returning an object will allow you to return actual source code and specify what type of code it is.
+This means you can return sass or javascript code directly, and it will be browserified or converted to sass.</p>
+<h2 id="why-is-this-useful">Why is this useful?</h2>
+<p>In some rare cases, you might find yourself having to return sass code that might be contained in a namespace (for example:)</p>
+<pre><code class="javascript">handlers:[
+    function (queryParams) {
+        if (path.extname(queryParams.pathname) === '.scss' &amp;&amp; queryParams.query.ID) {
+            var code = fs.readFileSync(decodeURI(queryParams.pathname));
+
+            //wrap the code in a class (browser requested namespaced css)
+            return {
+                src: '.' + queryParams.query.FACTORY_ID + '{' + code + &quot;}&quot;,
+                extname: '.scss'
+            };
+        }
+    }
+]
+</code></pre>
+
+<p>Whatever the reason, if a mapping is not good-enough, use a handler and do the checks on the queryParams yourself.</p>
+<h1 id="mappings">Mappings</h1>
+<p>Mappings are like a simple way to use handlers (see above), there are a number of ways to use mappings:</p>
+<pre><code class="javascript">mappings : {
+    //point a mapping to an absolute file
+    &quot;/index.html&quot; : __dirname + &quot;/../tests/index.html&quot;,
+
+    //only allow a or d, (and then append the incoming request)
+    &quot;/+(a|d).js&quot; : __dirname + &quot;/../tests/js&quot;,
+
+    //all sass files get send to the sass dir
+    &quot;/*.scss&quot; : __dirname + &quot;/../tests/sass&quot;,
+
+    //use a handler for this file glob (works like the above handlers)
+    &quot;/test1.js&quot;   : function(url){
+        return {src: &quot;console.log('test1 worked');&quot;, extname:'.js'};
+    }
+},
+</code></pre>
+
+<h1 id="index-transform-isomorphic-websites">Index Transform / Isomorphic Websites</h1>
+<p>When building isomorphic applications, you will want to do server side rendering. 
+In this case, provide an index transform, which is run just before STORM servers the <strong>index</strong> file.</p>
+<pre><code class="html">&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+    &lt;head&gt;
+        &lt;title&gt;My First Storm Website&lt;/title&gt;
+        &lt;meta charset=&quot;utf-8&quot;&gt;
+        &lt;script src=&quot;main.js&quot;&gt;&lt;/script&gt;
+        &lt;link rel=&quot;stylesheet&quot; href=&quot;main.scss&quot;/&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;%= react %&gt;
+    &lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+
+<pre><code class="javascript">indexTransform: function(request,content){
+
+    //required for react to work
+    process.env.NODE_ENV = 'development';
+
+    var data = {
+        react: React.renderToString(React.DOM.h1(null,&quot;Hello World&quot;))
+    };
+
+    return (_.template(content))(data);
+},
+</code></pre>
+
+<h1 id="control-the-dependency-tree">Control the dependency tree</h1>
+<p>If you want to have tighter control over our custom browserify pipeline,
+you can pass in options to the exposed services using the <strong>deps</strong> key.</p>
+<p>npm libraries that are exposed are:</p>
+<ul>
+<li><strong>uglify</strong> : Uglify JS</li>
+<li><strong>moduleDeps</strong> : Module Deps (Browserify)</li>
+<li><strong>chokidar</strong> : Chokidar (we use this for watching files to bust cache)</li>
+</ul>
+<pre><code class="javascript">deps : {
+    //turn on/off uglify or pass in options
+    uglify: false || { &lt;optionsForUglifyJS&gt; },
+
+    //pass additional options to Module Deps (the browserify pipeline)
+    moduleDeps:{
+        noParse : ['react'],
+    }
+}
+</code></pre>
+
+<h1 id="aliases">Aliases</h1>
+<p>If you want to force STORM Serve to use a particular file when doing a require(), you can override this here.</p>
+<pre><code class="javascript">aliases: {
+    &quot;react/addons&quot; : __dirname + &quot;/../node_modules/react/dist/react-with-addons.js&quot;,
+    &quot;react&quot; :        __dirname + &quot;/../node_modules/react/dist/react-with-addons.js&quot;,
+
+    //this is useful if you want to simply call require(&quot;MyApplication&quot;); anywhere within your app
+    &quot;MyApplication&quot;: __dirname + &quot;/some/dir/app.js&quot;
+},
+</code></pre>
+
+<p>Aliases are useful for building sites that use plugins, or where there are many files, and you want to avoid require("../../../../")
+Aliases are also useful if you want to prevent the Dependency engine from crawling a massive library like React. In this case,
+its much more efficient to point "react" to the minified library.</p>
+<h1 id="docker-remote-filesystems">Docker / Remote Filesystems</h1>
+<p>Storm serve watches every javascript file that in the debs tree, and when the file changes, it busts the cache.
+The problem is, on some remote file systems, this does not happen fast enough, because the filesystem does not trigger
+the fs event required to bust the cache, While this is not a problem in production, this can make it complicated
+to work with docker.</p>
+<p>For this purposes, there is a standlone node script you can run on your host machine. The idea is to watch for changes on your host
+machine and then remotely tell STORM Serve that the file has changed (Here we assume you are mounting the files into your remote file system using
+something like NFS).</p>
+<h2 id="docker-and-docker-compose">Docker and docker-compose</h2>
+<p>Simply run:</p>
+<pre><code class="bash">
+node container-node/node_modules/storm-serve/src/HostWatcher.js \
+    --host http://docker.local:8092 \
+    --dockerComposeFile docker-compose.yml 
+    --dockerComposeKey node
+</code></pre>
+
+<p>Where <strong>host</strong> is the address and port of the middleware,
+<strong>dockerComposeFile</strong> is the name of your compose file and
+<strong>dockerComposeKey</strong> is the name of your container that is running storm-serve</p>
+		</div>
+		<nav class="toc">
+			<ul data-uk-scrollspy-nav="{cls:'active'}">
+				
+					<li><a class="active" href="#handlers">Handlers</a>
+						<ul>
+							
+								<li><a  href="#why-is-this-useful">Why is this useful?</a></li>
+							
+						</ul>
+					</li>
+				
+					<li><a  href="#mappings">Mappings</a>
+						<ul>
+							
+						</ul>
+					</li>
+				
+					<li><a  href="#index-transform-isomorphic-websites">Index Transform / Isomorphic Websites</a>
+						<ul>
+							
+						</ul>
+					</li>
+				
+					<li><a  href="#control-the-dependency-tree">Control the dependency tree</a>
+						<ul>
+							
+						</ul>
+					</li>
+				
+					<li><a  href="#aliases">Aliases</a>
+						<ul>
+							
+						</ul>
+					</li>
+				
+					<li><a  href="#docker-remote-filesystems">Docker / Remote Filesystems</a>
+						<ul>
+							
+								<li><a  href="#docker-and-docker-compose">Docker and docker-compose</a></li>
+							
+						</ul>
+					</li>
+				
+			</ul>
+		</nav>
+	</body>
+</html>

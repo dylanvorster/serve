@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>STORM Serve</title>
+		<link type="text/css" rel="stylesheet" href="./node_modules/roboto-font/css/fonts.css">
+		<link type="text/css" rel="stylesheet" href="./css/theme.css">
+		<script type='text/javascript' src='./javascript/jquery.js'></script>
+		<script type='text/javascript' src='./javascript/uikit.min.js'></script>
+		<script type='text/javascript' src='./javascript/scrollspy.js'></script>
+		<script type='text/javascript' src='./javascript/highlight.js'></script>
+		<script type='text/javascript'>
+			$(document).ready(function() {
+				 hljs.initHighlightingOnLoad();
+			});
+		</script>
+	</head>
+	<body>
+		<div class="menubar">
+			<img src="./logo.png" />
+			<h1>Serve</h1>
+			<ul>
+				
+					
+					<li>
+						<a class="active" href=".">Home</a>
+					</li>
+					
+				
+					
+					<li>
+						<a class="" href="guide/">User Guide</a>
+					</li>
+					
+				
+					
+					<li>
+						<a class="" href="advanced/">Advanced Guide</a>
+					</li>
+					
+				
+			</ul>
+		</div>
+		<div class="hero">
+			<h1>Home</h1>
+		</div>
+		<div class="content">
+			<h1 id="welcome-to-storm-serve">Welcome to STORM Serve</h1>
+<p>STORM Serve is a web server written in Node that solves a lot of problems associated
+with building javascript web applications.</p>
+<h2 id="storm-serve-can-do-the-following">STORM serve can do the following:</h2>
+<ul>
+<li>Serve sass that is auto-prefixed</li>
+<li>Serve Javascript modules and track dependencies of a site per browser tab</li>
+<li>Uglify resulting javascript for high performance websites</li>
+<li>Provide Aliases for code in module files, allowing for plugin based architecture in your application</li>
+<li>Allow for the creation of Isomorphic Websites via the use of an indexTransform</li>
+<li>Automatically watch Javascript files and bust modules which have already been compiled.</li>
+<li>Provide simple glob matching to redirect requests to paths, or to custom handlers (see below)</li>
+<li>Allow you to create custom handlers that can be run on compiled Javascript and SASS code before it is served.</li>
+</ul>
+<h2 id="whoa-thats-a-lot-of-stuff-break-it-down-for-me">Whoa thats a lot of stuff, break it down for me!</h2>
+<p>In a nuthshell, STORM Serve is like <strong>browserify on steroids as middleware for express</strong> with the ability to track which files you have already been served.
+Traditionaly, when using browserify, you generate static files, and your entire application is served in one go. But what happens
+when you need to build much larger sites, and you would prefer to live-load that code as the user starts browsing?</p>
+<p>Well thats where you would usually turn to libraries like browserify-factorify to sperate your code into chunks. This in itself is problematic
+and is not a good solution to the problem esepcially when you are building modular software and are not sure what plugins/modules are going to be loaded.
+Take this directory structure for example:</p>
+<pre><code>site core
+    page1.js (react)
+    page2.js (react,D3)
+    page3.js (react,D3)
+    page4.js (react)
+
+plugins
+    plugin1
+        page5.js (react)
+        page6.js (react,D3,angular)
+    plugin2
+        page7.js (react)
+        page8.js (react,D3)
+</code></pre>
+
+<p>In the above example, we have the core site, which has its pages that all use react, but we also have some plugins that use react.
+Ontop of that, page 6 in plugin 1 uses angular, and that page might only be loaded if you are an admin.</p>
+<p>Therefore we can make some assumptions:</p>
+<ul>
+<li>It is not a good idea to browserify the entire site into one big bundle, because we send unnesesary amounts of possibly large code</li>
+<li>We still want to be able to write in modules, and use require("react") in every page</li>
+<li>We dont want to send over react every single time the user loads a different page (ReactClass) </li>
+</ul>
+		</div>
+		<nav class="toc">
+			<ul data-uk-scrollspy-nav="{cls:'active'}">
+				
+					<li><a class="active" href="#welcome-to-storm-serve">Welcome to STORM Serve</a>
+						<ul>
+							
+								<li><a  href="#storm-serve-can-do-the-following">STORM serve can do the following:</a></li>
+							
+								<li><a  href="#whoa-thats-a-lot-of-stuff-break-it-down-for-me">Whoa thats a lot of stuff, break it down for me!</a></li>
+							
+						</ul>
+					</li>
+				
+			</ul>
+		</nav>
+	</body>
+</html>

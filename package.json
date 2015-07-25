@@ -1,0 +1,11 @@
+{
+  "name": "storm-serve-documentation",
+  "version": "0.0.1",
+  "author": "alexisvincent",
+  "contributors": [],
+  "dependencies": {
+  },
+  "devDependencies": {
+  },
+  "description": "Documentation for STORM Serve"
+}

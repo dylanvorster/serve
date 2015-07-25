@@ -5,5 +5,10 @@
 $blue: rgb(0,0,244);
 body{
 	background: rgb(230,230,230);
-	color: $blue;
+	img{
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		transform: translateX(-50%) translateY(-50%);
+	}
 }

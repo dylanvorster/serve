@@ -4,10 +4,10 @@ var insert		= require('insert-module-globals');
 var unique		= require('lodash/array/uniq');
 var UglifyJS	= require('uglify-js');
 var chokidar	= require('chokidar');
-var _			= require('lodash');
 var logger		= require('log4js').getLogger('Module Deps');
 var resolve		= require('browser-resolve');
 var path		= require('path');
+var _			= require('lodash');
 
 
 /**
@@ -15,11 +15,11 @@ var path		= require('path');
  */
 module.exports = {
 
-	//caches
-	gazeCache:		{},
-	uglifyCache:	{},
-	cache:			{},
-	watcher:		null,
+	//variables
+	filesBeingWatched:	{},
+	uglifyCache:		{},
+	moduleDepsCache:	{},
+	watcher:			null,
 
 	scanJavascript : function (file, cb, opts) {
 		opts = opts || {};
@@ -27,7 +27,7 @@ module.exports = {
 		process.env.NODE_ENV = (opts.production === false) ? 'development' : 'production';
 		
 		var moduleDepsDefaults = {
-			cache:				this.cache,
+			moduleDepsCache:	this.moduleDepsCache,
 			transformKey :		['browserify', 'transform'],
 			globalTransform :	[
 				//insert globals
@@ -72,25 +72,25 @@ module.exports = {
 		var hashes	= {};
 		md.on('data', function (row) {
 			var id			= row.id;
-			this.cache[id]	= _.clone(row,true);
+			this.moduleDepsCache[id]	= _.clone(row,true);
 			
-			//using middleware for the cache busting
+			//using middleware for the moduleDepsCache busting
 			for(var i in opts.externalJSListener.sockets){
 				opts.externalJSListener.sockets[i].emit('new-file',row.id);
 			}
 			
 			//only watch each file once
-			if (this.gazeCache[row.id] === undefined) {
-				this.gazeCache[row.id] = true;
+			if (this.filesBeingWatched[row.id] === undefined) {
+				this.filesBeingWatched[row.id] = true;
 				
-				//using internal gazing for the cache busting
+				//using internal gazing for the moduleDepsCache busting
 				if(opts.bustCache){
 					if (!this.watcher) {
 						this.watcher = chokidar.watch(row.id, chokidarDefaults);
 
 						this.watcher.on('change', function (path) {
 							logger.info(path + ' was changed');
-							delete this.cache[path];
+							delete this.moduleDepsCache[path];
 							delete this.uglifyCache[path];
 						}.bind(this));
 					} else {

@@ -28,7 +28,7 @@ app.use(SessionModule.main({
 		//required for react to work
 		process.env.NODE_ENV = 'development';
 		var data = {
-			react : React.renderToString(React.createElement('div',{},"Test Index Transform"))
+			react : React.renderToString(React.DOM.img({src:"logo.png"}))
 		};
 		return (_.template(content))(data);
 	},
@@ -57,10 +57,13 @@ app.use(SessionModule.main({
 	 * @optional
 	 */
 	deps : {
+		/* ENABLE THIS IF YOU WANT TO USE DOCKER 
+		 * AS WELL AS THE CACHE BUSTER
 		bustCache: false,
 		externalJSListener: {
 			port: 8889
 		},
+		*/
 		uglify: {},
 		moduleDeps : {}
 	}

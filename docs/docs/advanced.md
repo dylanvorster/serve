@@ -61,6 +61,16 @@ mappings : {
 },
 ```
 
+# Session Expiry Time
+
+The default Session expiry time is 1 hour
+
+To change this, simply set the variable: __sessionExpire__ (this is in minutes)
+
+```javascript
+sessionExpire : 60*24 //24 hours
+```
+
 # Index Transform / Isomorphic Websites
 
 When building isomorphic applications, you will want to do server side rendering. 

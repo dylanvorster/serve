@@ -51,19 +51,18 @@ app.use(SessionModule.main({
 	 * @optional
 	 */
 	aliases : {
-		"react" : __dirname + "/../node_modules/react/dist/react.js"
+//		"react" : __dirname + "/../node_modules/react/dist/react.js"
 	},
+	loglevel: 'DEBUG',
 	/*
 	 * @optional
 	 */
 	deps : {
-		/* ENABLE THIS IF YOU WANT TO USE DOCKER 
-		 * AS WELL AS THE CACHE BUSTER
 		bustCache: false,
 		externalJSListener: {
 			port: 8889
 		},
-		*/
+		
 		uglify: {},
 		moduleDeps : {}
 	}

@@ -141,7 +141,6 @@ module.exports = {
 
 		//browserify the file without checking for dependencies
 		if (sessionID !== undefined) {
-
 			DepsModule.scanJavascript(resultingObject, function (files) {
 				var pack = require('browser-pack')({
 					raw : true,
@@ -155,7 +154,6 @@ module.exports = {
 				}.bind(this));
 
 				logger.info("Serving: "+queryObject.pathname+" ("+(Date.now()-time)+"ms)");
-
 				pack.pipe(response);
 				pack.end();
 			}.bind(this), _.assign(this.settings.deps, { aliases : this.settings.aliases }));

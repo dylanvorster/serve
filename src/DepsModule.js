@@ -31,7 +31,7 @@ module.exports = {
 		process.env.NODE_ENV = (opts.production === false) ? 'development' : 'production';
 		
 		var moduleDepsDefaults = {
-			moduleDepsCache:	this.moduleDepsCache,
+			cache:	this.moduleDepsCache,
 			transformKey :		['browserify', 'transform'],
 			globalTransform :	[
 				//insert globals

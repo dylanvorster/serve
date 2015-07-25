@@ -1,5 +1,5 @@
-var logger = require("log4js").getLogger("Serve Module");
 var Toolkit = require("./Toolkit");
+var logger = Toolkit.getLogger("Serve Module");
 /**
  * This module is responsible for storing Sessions and working with them
  * 

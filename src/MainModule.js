@@ -1,13 +1,17 @@
-var url = require("url");
-var fs = require("fs");
-var minimatch = require("minimatch");
-var _ = require("lodash");
-var logger = require("log4js").getLogger("Serve Module");
-var path = require("path");
+//library imports
+var minimatch	= require("minimatch");
+var Toolkit		= require("./Toolkit");
+var path		= require("path");
+var url			= require("url");
+var fs			= require("fs");
+var _			= require("lodash");
 
 //local imports
 var DepsModule = require("./DepsModule");
 var SessionModule = require("./SessionModule");
+
+//get a logger
+var logger = Toolkit.getLogger("Main Module");
 
 /**
  * Helper function
@@ -36,6 +40,8 @@ module.exports = {
 
 		//these are first-class responders [function(queryObject){}] that are requested before the mappings are
 		handlers : [],
+		
+		loglevel: 'INFO',
 		
 		//glob for the file serve
 		mappings : {
@@ -116,7 +122,7 @@ module.exports = {
 	 * @returns {Boolean}
 	 */
 	handleJavascript : function (request, response, queryObject) {
-
+		var time = Date.now();
 		//we only care about javascript files
 		var resultingObject = this.resolve(queryObject);
 
@@ -148,10 +154,11 @@ module.exports = {
 					}
 				}.bind(this));
 
+				logger.info("Serving: "+queryObject.pathname+" ("+(Date.now()-time)+"ms)");
+
 				pack.pipe(response);
 				pack.end();
 			}.bind(this), _.assign(this.settings.deps, { aliases : this.settings.aliases }));
-
 		}
 	},
 
@@ -221,10 +228,14 @@ module.exports.main = function (options) {
 	//merges in options
 	_.merge(module.exports.settings, options || {});
 	
+	Toolkit.loggers.forEach(function(logger){
+		logger.setLevel(module.exports.settings.loglevel);
+	});
+	
 	//start a thread to monitor sessions on the server and delete them if they expire
 	setInterval(function(){
-		SessionModule.purgeSessions(this.settings.sessionExpire*1000*60);
-	}.bind(this),1000*60);
+		SessionModule.purgeSessions(module.exports.settings.sessionExpire*1000*60);
+	},1000*60);
 	
 	//start a middleware server to listen for host file changes
 	if(module.exports.settings.deps.externalJSListener.port){
@@ -294,6 +305,7 @@ module.exports.scss = function (options) {
 
 	options = _.assign(defaults, options);
 	return function (request, response, next) {
+		var time = Date.now();
 		var parsedURL = url.parse(request.url, true);
 		var resolvedURL = module.exports.resolve(parsedURL);
 		
@@ -316,6 +328,8 @@ module.exports.scss = function (options) {
 			//clean variables
 			options.scss.file = null;
 			options.scss.data = null;
+
+			logger.info("Serving: "+parsedURL.pathname+" ("+(Date.now()-time)+"ms)");
 
 			response.writeHead(200);
 			response.write(css);

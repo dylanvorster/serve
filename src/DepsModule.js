@@ -1,13 +1,17 @@
+//library imports
 var moduleDeps	= require('module-deps');
 var shasum		= require('shasum');
 var insert		= require('insert-module-globals');
 var unique		= require('lodash/array/uniq');
 var UglifyJS	= require('uglify-js');
 var chokidar	= require('chokidar');
-var logger		= require('log4js').getLogger('Module Deps');
+var Toolkit		= require('./Toolkit');
 var resolve		= require('browser-resolve');
 var path		= require('path');
 var _			= require('lodash');
+
+//generate a logger
+var logger		= Toolkit.getLogger('JS Deps Module');
 
 
 /**

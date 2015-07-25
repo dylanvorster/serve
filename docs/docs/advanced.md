@@ -61,6 +61,12 @@ mappings : {
 },
 ```
 
+# Setting the Log Level
+
+```javascript
+loglevel : 'DEBUG' //INFO, DEBUG, TRACE, ERROR
+```
+
 # Session Expiry Time
 
 The default Session expiry time is 1 hour

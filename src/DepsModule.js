@@ -140,6 +140,10 @@ module.exports = {
 			}.bind(this));
 			cb(files);
 		}.bind(this));
+
+        md.on('error', function (err) {
+            logger.info(err);
+        });
 		
 		//source was piped in directly
 		if(file.src){

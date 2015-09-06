@@ -265,7 +265,7 @@ module.exports.main = function (options) {
 		//we only care about javascript files
 		var pathname = parsedURL.pathname;
 
-		if (pathname === '/' || path.extname(pathname) === '.html') {
+		if (path.extname(pathname) === '' || path.extname(pathname) === '.html') {
 			logger.debug("trying to serve index: " + pathname);
 			module.exports.handleIndex(request, response, next);
 		} else {

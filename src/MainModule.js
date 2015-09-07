@@ -284,10 +284,12 @@ module.exports.main = function (options) {
                 response.setHeader('Content-Type', 'application/javascript');
                 logger.debug("trying to serve javascript: " + pathname);
                 module.exports.handleJavascript(request, response, parsedURL);
-            } else {
-                logger.debug("trying to serve static file: " + pathname);
-                module.exports.handleStatic(response, resolvedURL, next);
-            }
+			} else if ((resolvedURL.extname || path.extname(resolvedURL)) === '.scss') {
+				next()
+			} else {
+				logger.debug("trying to serve static file: " + pathname);
+				module.exports.handleStatic(response, resolvedURL, next);
+			}
         } else if (path.extname(pathname) === '') {
             logger.debug("trying to serve the default index");
             request.url = '/';

@@ -73,7 +73,6 @@ module.exports = {
 		if(possibilities.indexOf(request.url) === -1){
 			next();
 		}
-		request.url = '/index.html';
 		
 		var content = fs.readFileSync(this.getPath(request.url)).toString();
 
@@ -159,6 +158,18 @@ module.exports = {
 			}.bind(this), _.assign(this.settings.deps, { aliases : this.settings.aliases }));
 		}
 	},
+
+    handleStatic : function (response, file, next) {
+
+        if (fs.exists(file)) {
+            var content = fs.readFileSync(file).toString();
+        } else {
+            return next()
+        }
+
+        response.write(content);
+        response.end();
+    },
 
 	/**
 	 * Resolves the queryObject through the handlers and the path mappings
@@ -258,26 +269,32 @@ module.exports.main = function (options) {
 		});
 	}
 
-	//sort the mappings accoring to absolute paths first
+	//sort the mappings according to absolute paths first
 	return function (request, response, next) {
 
-		var parsedURL = url.parse(request.url, true);
-		//we only care about javascript files
-		var pathname = parsedURL.pathname;
+		var parsedURL = url.parse(request.url, true),
+		    pathname = parsedURL.pathname,
+            resolvedURL = module.exports.resolve(parsedURL);
 
-		if (path.extname(pathname) === '' || path.extname(pathname) === '.html') {
-			logger.debug("trying to serve index: " + pathname);
-			module.exports.handleIndex(request, response, next);
-		} else {
-			var resolvedURL = module.exports.resolve(parsedURL);
-			if ((resolvedURL.extname || path.extname(resolvedURL)) === '.js') {
-				response.setHeader('Content-Type', 'application/javascript');
-				logger.debug("trying to serve javascript: " + pathname);
-				module.exports.handleJavascript(request, response, parsedURL);
-			} else {
-				next();
-			}
-		}
+        if (resolvedURL) {
+            if ((resolvedURL.extname || path.extname(resolvedURL)) === '.html' || (resolvedURL.extname || path.extname(resolvedURL)) === '.htm') {
+                logger.debug("trying to serve index: " + pathname);
+                module.exports.handleIndex(request, response, next);
+            } else if ((resolvedURL.extname || path.extname(resolvedURL)) === '.js') {
+                response.setHeader('Content-Type', 'application/javascript');
+                logger.debug("trying to serve javascript: " + pathname);
+                module.exports.handleJavascript(request, response, parsedURL);
+            } else {
+                logger.debug("trying to serve static file: " + pathname);
+                module.exports.handleStatic(response, resolvedURL, next);
+            }
+        } else if (path.extname(pathname) === '') {
+            logger.debug("trying to serve the default index");
+            request.url = '/';
+            module.exports.handleIndex(request, response, next);
+        } else {
+            next();
+        }
 	};
 };
 

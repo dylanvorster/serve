@@ -13,9 +13,10 @@ app.use(SessionModule.main({
 	 * @required
 	 */
 	mappings : {
-		"/index.html" : __dirname + "/../tests/index.html",
+		"/" : __dirname + "/../tests/index.html",
 		"/+(a|d).js" : __dirname + "/../tests/js",
 		"/*.scss" : __dirname + "/../tests/sass",
+        "/json": __dirname + "/../tests/stati/static.json",
 		"/test1.js"	  : function(url){
 			return {src: "console.log('test1 worked');", extname:'.js'};
 		}
@@ -28,7 +29,7 @@ app.use(SessionModule.main({
 		//required for react to work
 		process.env.NODE_ENV = 'development';
 		var data = {
-			react : React.renderToString(React.DOM.img({src:"logo.png"}))
+			react : React.renderToString(React.DOM.img({src:"/logo.png"}))
 		};
 		return (_.template(content))(data);
 	},

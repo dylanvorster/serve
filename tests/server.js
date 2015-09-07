@@ -17,6 +17,7 @@ app.use(SessionModule.main({
 		"/+(a|d).js" : __dirname + "/../tests/js",
 		"/*.scss" : __dirname + "/../tests/sass",
 		"/json": __dirname + "/../tests/static/static.json",
+		"/css": __dirname + "/../tests/static/static.css",
 		"/test1.js"	  : function(url){
 			return {src: "console.log('test1 worked');", extname:'.js'};
 		}

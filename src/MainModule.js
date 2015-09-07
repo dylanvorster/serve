@@ -5,6 +5,7 @@ var path		= require("path");
 var url			= require("url");
 var fs			= require("fs");
 var _			= require("lodash");
+var serveStatic = require('connect-static-file');
 
 //local imports
 var DepsModule = require("./DepsModule");
@@ -159,18 +160,6 @@ module.exports = {
 		}
 	},
 
-    handleStatic : function (response, file, next) {
-
-        if (fs.lstatSync(file)) {
-            var content = fs.readFileSync(file).toString();
-        } else {
-            return next()
-        }
-
-        response.write(content);
-        response.end();
-    },
-
 	/**
 	 * Resolves the queryObject through the handlers and the path mappings
 	 *
@@ -256,7 +245,7 @@ module.exports.main = function (options) {
 		io.on('connection',function(socket){
 			logger.info('socket connected: '+socket.id);
 			module.exports.settings.deps.externalJSListener.sockets[socket.id] = socket;
-			
+
 			socket.on('file-changed',function(file){
 				delete DepsModule.moduleDepsCache[file];
 				delete DepsModule.uglifyCache[file];
@@ -273,30 +262,26 @@ module.exports.main = function (options) {
 	return function (request, response, next) {
 
 		var parsedURL = url.parse(request.url, true),
-		    pathname = parsedURL.pathname,
-            resolvedURL = module.exports.resolve(parsedURL);
+			pathname = parsedURL.pathname,
+			resolvedURL = module.exports.resolve(parsedURL);
 
-        if (resolvedURL) {
-            if ((resolvedURL.extname || path.extname(resolvedURL)) === '.html' || (resolvedURL.extname || path.extname(resolvedURL)) === '.htm') {
-                logger.debug("trying to serve index: " + pathname);
-                module.exports.handleIndex(request, response, next);
-            } else if ((resolvedURL.extname || path.extname(resolvedURL)) === '.js') {
-                response.setHeader('Content-Type', 'application/javascript');
-                logger.debug("trying to serve javascript: " + pathname);
-                module.exports.handleJavascript(request, response, parsedURL);
+		if (resolvedURL) {
+			if ((resolvedURL.extname || path.extname(resolvedURL)) === '.html' || (resolvedURL.extname || path.extname(resolvedURL)) === '.htm') {
+				logger.debug("trying to serve index: " + pathname);
+				module.exports.handleIndex(request, response, next);
+			} else if ((resolvedURL.extname || path.extname(resolvedURL)) === '.js') {
+				response.setHeader('Content-Type', 'application/javascript');
+				logger.debug("trying to serve javascript: " + pathname);
+				module.exports.handleJavascript(request, response, parsedURL);
 			} else if ((resolvedURL.extname || path.extname(resolvedURL)) === '.scss') {
 				next()
 			} else {
 				logger.debug("trying to serve static file: " + pathname);
-				module.exports.handleStatic(response, resolvedURL, next);
+				serveStatic(resolvedURL, {})(request, response, next);
 			}
-        } else if (path.extname(pathname) === '') {
-            logger.debug("trying to serve the default index");
-            request.url = '/';
-            module.exports.handleIndex(request, response, next);
-        } else {
-            next();
-        }
+		} else {
+			next();
+		}
 	};
 };
 

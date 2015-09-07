@@ -8,6 +8,7 @@
     "browser-pack": "^5.0.0",
     "browser-resolve": "^1.9.0",
     "chokidar": "^1.0.3",
+    "connect-static-file": "^1.0.3",
     "insert-module-globals": "^6.4.2",
     "load-script": "^1.0.0",
     "lodash": "^3.8.0",

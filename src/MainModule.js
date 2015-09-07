@@ -161,7 +161,7 @@ module.exports = {
 
     handleStatic : function (response, file, next) {
 
-        if (fs.exists(file)) {
+        if (fs.lstatSync(file)) {
             var content = fs.readFileSync(file).toString();
         } else {
             return next()

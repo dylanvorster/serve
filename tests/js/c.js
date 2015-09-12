@@ -3,7 +3,7 @@ var React = require("react");
 module.exports = {
 	fetchD: function(){
 		window.onload = function(){
-			window.loadModule("d.js");
+			window.loadModule("/../d.js");
 		};
 	},
 	confirmDLoaded: function(){

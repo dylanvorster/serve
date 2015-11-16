@@ -261,26 +261,30 @@ module.exports.main = function (options) {
 	//sort the mappings according to absolute paths first
 	return function (request, response, next) {
 
-		var parsedURL = url.parse(request.url, true),
+		if (request.method == "GET") {
+			var parsedURL = url.parse(request.url, true),
 			pathname = parsedURL.pathname,
 			resolvedURL = module.exports.resolve(parsedURL);
 
-		if (resolvedURL) {
-			if ((resolvedURL.extname || path.extname(resolvedURL)) === '.html' || (resolvedURL.extname || path.extname(resolvedURL)) === '.htm') {
-				logger.debug("trying to serve index: " + pathname);
-				module.exports.handleIndex(request, response, next);
-			} else if ((resolvedURL.extname || path.extname(resolvedURL)) === '.js') {
-				response.setHeader('Content-Type', 'application/javascript');
-				logger.debug("trying to serve javascript: " + pathname);
-				module.exports.handleJavascript(request, response, parsedURL);
-			} else if ((resolvedURL.extname || path.extname(resolvedURL)) === '.scss') {
-				next()
+			if (resolvedURL) {
+				if ((resolvedURL.extname || path.extname(resolvedURL)) === '.html' || (resolvedURL.extname || path.extname(resolvedURL)) === '.htm') {
+					logger.debug("trying to serve index: " + pathname);
+					module.exports.handleIndex(request, response, next);
+				} else if ((resolvedURL.extname || path.extname(resolvedURL)) === '.js') {
+					response.setHeader('Content-Type', 'application/javascript');
+					logger.debug("trying to serve javascript: " + pathname);
+					module.exports.handleJavascript(request, response, parsedURL);
+				} else if ((resolvedURL.extname || path.extname(resolvedURL)) === '.scss') {
+					next()
+				} else {
+					logger.debug("trying to serve static file: " + pathname);
+					serveStatic(resolvedURL, {})(request, response, next);
+				}
 			} else {
-				logger.debug("trying to serve static file: " + pathname);
-				serveStatic(resolvedURL, {})(request, response, next);
+				next();
 			}
 		} else {
-			next();
+			next()
 		}
 	};
 };
